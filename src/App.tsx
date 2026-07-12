@@ -28,6 +28,11 @@ export default function App() {
     void init();
   }, [init]);
 
+  // Density is a root data attribute — CSS overrides in base.css key off it.
+  useEffect(() => {
+    document.documentElement.dataset.density = settings?.density ?? 'compact';
+  }, [settings?.density]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {

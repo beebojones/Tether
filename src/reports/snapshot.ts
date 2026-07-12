@@ -35,7 +35,7 @@ export function generateSnapshotHtml({ items, milestones, users, preparedBy }: S
         : { label: 'On track', color: '#1d7a4d' };
 
   const stat = (n: number, label: string, tone = '#20242c') =>
-    `<div class="stat"><div class="stat-n" style="color:${tone}">${n}</div><div class="stat-l">${esc(label)}</div></div>`;
+    `<div class="stat"><div class="stat-n" data-count="${n}" style="color:${tone}">${n}</div><div class="stat-l">${esc(label)}</div></div>`;
 
   const row = (i: WorkItem, extra = '') => `
     <tr>
@@ -61,7 +61,7 @@ export function generateSnapshotHtml({ items, milestones, users, preparedBy }: S
       return `
       <div class="ms">
         <div class="ms-head"><span>${esc(m.name)}</span><span class="dim">${m.targetDate ? `target ${esc(m.targetDate)} · ` : ''}${pct}% (${done}/${inMs.length})</span></div>
-        <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="bar"><div class="fill" data-pct="${pct}" style="width:${pct}%"></div></div>
       </div>`;
     })
     .join('');
@@ -102,10 +102,33 @@ export function generateSnapshotHtml({ items, milestones, users, preparedBy }: S
   .fill { height: 100%; background: linear-gradient(90deg, #2d5bd7, #7a3fd1); border-radius: 5px; }
   .note { font-size: 12.5px; color: #6a7386; margin-top: 2px; }
   footer { margin-top: 44px; padding-top: 14px; border-top: 1px solid #e4e7ee; color: #8a92a5; font-size: 12px; display: flex; justify-content: space-between; }
+  /* ---- Life: staggered reveals, count-ups, bar fills. Fully disabled for
+          print and prefers-reduced-motion — content is always complete without JS. ---- */
+  .anim header { animation: rise 600ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .anim header { border-image: linear-gradient(90deg, #2d5bd7, #7a3fd1) 1; }
+  .anim .stats .stat { opacity: 0; animation: rise 550ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+  .anim .stats .stat:nth-child(1) { animation-delay: 120ms; }
+  .anim .stats .stat:nth-child(2) { animation-delay: 190ms; }
+  .anim .stats .stat:nth-child(3) { animation-delay: 260ms; }
+  .anim .stats .stat:nth-child(4) { animation-delay: 330ms; }
+  .anim .stats .stat:nth-child(5) { animation-delay: 400ms; }
+  .anim .stats .stat:nth-child(6) { animation-delay: 470ms; }
+  .anim section { opacity: 0; transform: translateY(14px); transition: opacity 550ms cubic-bezier(0.22, 1, 0.36, 1), transform 550ms cubic-bezier(0.22, 1, 0.36, 1); }
+  .anim section.in { opacity: 1; transform: none; }
+  .anim .fill { transform-origin: left; transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1) 250ms; }
+  .anim .health { animation: pop 420ms cubic-bezier(0.16, 1, 0.3, 1) 500ms both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
   @media print {
     body { background: #fff; }
     .page { padding: 0; max-width: none; }
-    section { break-inside: avoid; }
+    section { break-inside: avoid; opacity: 1 !important; transform: none !important; }
+    .anim header, .anim .stats .stat, .anim .health { animation: none !important; opacity: 1 !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .anim header, .anim .stats .stat, .anim .health { animation: none !important; opacity: 1 !important; }
+    .anim section { opacity: 1; transform: none; transition: none; }
+    .anim .fill { transition: none; }
   }
 </style>
 </head>
@@ -145,6 +168,50 @@ export function generateSnapshotHtml({ items, milestones, users, preparedBy }: S
     <span>Every item above is tracked and linked — ask for detail on any ID.</span>
   </footer>
 </div>
+<script>
+(function () {
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var printing = window.matchMedia('print').matches;
+  if (reduced || printing) return;
+  document.body.classList.add('anim');
+
+  // Milestone bars sweep in from zero (transform, not width — no layout thrash).
+  document.querySelectorAll('.fill').forEach(function (el) {
+    el.style.transform = 'scaleX(0)';
+    requestAnimationFrame(function () { requestAnimationFrame(function () { el.style.transform = 'scaleX(1)'; }); });
+  });
+
+  // Stat numbers count up.
+  document.querySelectorAll('.stat-n').forEach(function (el, i) {
+    var target = parseInt(el.getAttribute('data-count'), 10) || 0;
+    if (target === 0) return;
+    el.textContent = '0';
+    var start = null;
+    var dur = 700 + i * 60;
+    function tick(ts) {
+      if (!start) start = ts;
+      var p = Math.min(1, (ts - start) / dur);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = String(Math.round(target * eased));
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    setTimeout(function () { requestAnimationFrame(tick); }, 150 + i * 70);
+  });
+
+  // Sections reveal as they enter the viewport.
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('section').forEach(function (s) { io.observe(s); });
+
+  // Print always shows everything.
+  window.addEventListener('beforeprint', function () {
+    document.querySelectorAll('section').forEach(function (s) { s.classList.add('in'); });
+  });
+})();
+</script>
 </body>
 </html>`;
 }

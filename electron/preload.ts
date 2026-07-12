@@ -82,6 +82,7 @@ const api = {
   },
   export: {
     save: (defaultName: string, content: string) => invoke('export:save', defaultName, content),
+    pdf: (defaultName: string, html: string) => invoke('export:pdf', defaultName, html),
   },
   events: {
     onDataChanged: (cb: (what: { entity: string; entityId: string }) => void) => {

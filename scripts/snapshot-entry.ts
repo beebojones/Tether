@@ -1,4 +1,5 @@
 import { generateSnapshotHtml } from '../src/reports/snapshot';
+import { generateDeckHtml } from '../src/reports/deck';
 import type { WorkItem, Milestone, User } from '../shared/types';
 
 const days = (n: number) => new Date(Date.now() + n * 864e5).toISOString();
@@ -39,3 +40,4 @@ const items: WorkItem[] = [
   mk({ type: 'task', ident: 'TASK-3', title: 'Draft answer-quality evaluation rubric', status: 'todo', ownerId: 'mark', dueDate: days(3).slice(0, 10), milestoneId: 'm2' }),
 ];
 export const html = generateSnapshotHtml({ items, milestones, users, preparedBy: 'John Crouch' });
+export const deckHtml = generateDeckHtml({ items, milestones, users, preparedBy: 'John Crouch' });

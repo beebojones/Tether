@@ -23,6 +23,7 @@ export interface AppSettings {
   currentUser: UserIdentity | null;
   syncFolder: string | null;
   theme: 'dark' | 'light';
+  density: 'compact' | 'comfortable';
   seedLoaded: boolean;
 }
 
@@ -87,7 +88,10 @@ interface Bridge {
     remove(id: string): Promise<void>;
   };
   seed: { load(): Promise<number>; remove(): Promise<number> };
-  export: { save(defaultName: string, content: string): Promise<string | null> };
+  export: {
+    save(defaultName: string, content: string): Promise<string | null>;
+    pdf(defaultName: string, html: string): Promise<string | null>;
+  };
   events: {
     onDataChanged(cb: (what: { entity: string; entityId: string }) => void): () => void;
   };

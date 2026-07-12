@@ -133,6 +133,7 @@ const conflicts: SyncConflict[] = [
 
 const versions: ItemVersion[] = [];
 const savedViews: SavedView[] = [];
+let mockDensity: 'compact' | 'comfortable' = 'compact';
 const listeners = new Set<(w: { entity: string; entityId: string }) => void>();
 const emit = () => listeners.forEach((l) => l({ entity: '*', entityId: '*' }));
 
@@ -188,8 +189,17 @@ export function installDevMock(): void {
       backup: async () => '(browser preview — backup unavailable)',
     },
     settings: {
-      get: async () => ({ currentUser: { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF' }, syncFolder: syncStatus.folder, theme: 'dark' as const, seedLoaded: true }),
-      set: async () => bridge.settings.get(),
+      get: async () => ({
+        currentUser: { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF' },
+        syncFolder: syncStatus.folder,
+        theme: 'dark' as const,
+        density: mockDensity,
+        seedLoaded: true,
+      }),
+      set: async (patch: { density?: 'compact' | 'comfortable' }) => {
+        if (patch.density) mockDensity = patch.density;
+        return bridge.settings.get();
+      },
       setUser: async () => bridge.settings.get(),
       chooseSyncFolder: async () => null,
     },
@@ -320,6 +330,15 @@ export function installDevMock(): void {
         a.download = defaultName;
         a.click();
         return defaultName;
+      },
+      pdf: async (_defaultName: string, html: string) => {
+        // Browser preview: open the document and hand off to the browser's print-to-PDF.
+        const w = window.open('', '_blank');
+        if (!w) return null;
+        w.document.write(html);
+        w.document.close();
+        setTimeout(() => w.print(), 600);
+        return '(browser preview — use the print dialog to save as PDF)';
       },
     },
     events: {

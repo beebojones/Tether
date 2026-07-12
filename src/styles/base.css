@@ -87,3 +87,24 @@ kbd {
 
 .muted { color: var(--text-muted); }
 .mono { font-family: var(--font-mono); }
+
+/* ---------- Density: comfortable ----------
+   Compact is the default; the Settings toggle sets data-density on <html>. */
+:root[data-density='comfortable'] {
+  --fs-sm: 13.5px;
+  --fs-md: 14.5px;
+  --fs-lg: 16px;
+}
+:root[data-density='comfortable'] .item-row { padding: 12px 16px; }
+:root[data-density='comfortable'] .dash-row { padding: 9px 8px; }
+:root[data-density='comfortable'] .dash-activity { padding: 8px 8px; }
+:root[data-density='comfortable'] .nav-item { padding: 8.5px 10px; }
+:root[data-density='comfortable'] .board-card { padding: 14px 16px; }
+:root[data-density='comfortable'] .link-row { padding: 10px 12px; }
+:root[data-density='comfortable'] button { padding: 7px 14px; }
+:root[data-density='comfortable'] button.tb { padding: 6px 8px; }
+:root[data-density='comfortable'] input[type='text'],
+:root[data-density='comfortable'] input[type='date'],
+:root[data-density='comfortable'] select,
+:root[data-density='comfortable'] textarea { padding: 8px 12px; }
+:root[data-density='comfortable'] .rich-editor .ProseMirror { line-height: 1.7; }

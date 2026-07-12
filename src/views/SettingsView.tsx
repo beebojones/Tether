@@ -45,6 +45,20 @@ export default function SettingsView() {
         </p>
       </Section>
 
+      <Section title="Appearance">
+        <div className="form-row" style={{ maxWidth: 320 }}>
+          <label htmlFor="set-density">Density</label>
+          <select
+            id="set-density"
+            value={settings?.density ?? 'compact'}
+            onChange={(e) => void api.settings.set({ density: e.target.value as 'compact' | 'comfortable' }).then(setSettings)}
+          >
+            <option value="compact">Compact — more on screen (default)</option>
+            <option value="comfortable">Comfortable — larger rows and text</option>
+          </select>
+        </div>
+      </Section>
+
       <Section title="Collaboration & sync">
         <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 10 }}>
           Tether shares the project through a folder synced by OneDrive or SharePoint.

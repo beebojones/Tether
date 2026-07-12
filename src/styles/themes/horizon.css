@@ -1,0 +1,44 @@
+/* "Horizon" — dusk gradient: cool indigo sky over a warm ember horizon line.
+   Glass sidebar, warm/cool dual accents, the most atmospheric option. */
+:root {
+  --bg-app: #0d1018;
+  --bg-sidebar: rgba(16, 19, 30, 0.8);
+  --bg-panel: rgba(22, 26, 40, 0.75);
+  --bg-raised: rgba(32, 37, 56, 0.8);
+  --bg-hover: rgba(40, 46, 68, 0.82);
+  --bg-active: rgba(48, 55, 82, 0.85);
+  --bg-input: rgba(13, 16, 25, 0.75);
+
+  --border-subtle: rgba(140, 150, 200, 0.12);
+  --border-default: rgba(150, 160, 210, 0.2);
+  --border-strong: rgba(170, 175, 225, 0.32);
+
+  --accent: #7d95ff;
+  --accent-strong: #97abff;
+  --accent-soft: rgba(125, 149, 255, 0.14);
+  --accent-border: rgba(125, 149, 255, 0.38);
+  --st-progress: #7d95ff;
+  --pr-medium: #7d95ff;
+
+  --shadow-md: 0 8px 26px rgba(2, 4, 12, 0.55);
+  --shadow-lg: 0 20px 55px rgba(2, 4, 12, 0.7);
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(83, 105, 220, 0.12) 0%, transparent 34%),
+    radial-gradient(1500px 500px at 50% 118%, rgba(242, 140, 76, 0.13), transparent 62%),
+    radial-gradient(900px 500px at 96% -8%, rgba(155, 110, 242, 0.1), transparent 55%),
+    var(--bg-app) !important;
+}
+
+.sidebar, .dash-card, .item-table, .modal, .palette, .detail-rail, .board-col, .rich-editor {
+  backdrop-filter: blur(14px);
+}
+
+.sidebar-brand .logo, .ob-logo, .present-logo {
+  background: linear-gradient(135deg, #7d95ff 0%, #f28c4c 130%) !important;
+}
+.progress-fill, .pm-fill {
+  background: linear-gradient(90deg, #7d95ff, #f28c4c) !important;
+}

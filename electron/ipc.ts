@@ -3,6 +3,7 @@
 
 import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron';
 import fs from 'node:fs';
+import path from 'node:path';
 
 import type { Store } from './db/store';
 import type { SyncEngine } from './sync/engine';
@@ -40,7 +41,7 @@ export function registerIpc(deps: IpcDeps): void {
   // ---------- settings / identity ----------
   ipcMain.handle('settings:get', () => settings.get());
   ipcMain.handle('settings:set', (_e, patch: Record<string, unknown>) => {
-    const allowed: (keyof ReturnType<Settings['get']>)[] = ['theme', 'seedLoaded'];
+    const allowed: (keyof ReturnType<Settings['get']>)[] = ['theme', 'density', 'seedLoaded'];
     const clean: Record<string, unknown> = {};
     for (const k of allowed) if (k in patch) clean[k] = patch[k];
     return settings.set(clean);
@@ -232,4 +233,39 @@ export function registerIpc(deps: IpcDeps): void {
     return result.filePath;
   });
 
+  // Render HTML to PDF with Chromium's print engine — used for the Leadership
+  // Snapshot. The HTML never leaves the machine.
+  ipcMain.handle('export:pdf', async (_e, defaultName: string, html: string) => {
+    const win = deps.getWindow();
+    if (!win) return null;
+    const result = await dialog.showSaveDialog(win, {
+      defaultPath: defaultName,
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    });
+    if (result.canceled || !result.filePath) return null;
+
+    const tmpDir = path.join(ctx.dataDir, 'tmp');
+    fs.mkdirSync(tmpDir, { recursive: true });
+    const tmpHtml = path.join(tmpDir, `export-${Date.now()}.html`);
+    fs.writeFileSync(tmpHtml, html, 'utf8');
+
+    const printer = new BrowserWindow({
+      show: false,
+      webPreferences: { contextIsolation: true, nodeIntegration: false },
+    });
+    try {
+      await printer.loadFile(tmpHtml);
+      // Give the reveal animations a moment, then print (print CSS forces final states).
+      await new Promise((r) => setTimeout(r, 350));
+      const pdf = await printer.webContents.printToPDF({
+        printBackground: true,
+        margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
+      });
+      fs.writeFileSync(result.filePath, pdf);
+      return result.filePath;
+    } finally {
+      printer.destroy();
+      fs.rmSync(tmpHtml, { force: true });
+    }
+  });
 }

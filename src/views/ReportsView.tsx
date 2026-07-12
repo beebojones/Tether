@@ -7,6 +7,7 @@ import { api } from '../api';
 import { useApp } from '../store';
 import { useItems } from '../components/ui';
 import { generateSnapshotHtml } from '../reports/snapshot';
+import { generateDeckHtml } from '../reports/deck';
 
 type ReportKind = 'leadership' | 'blockers' | 'access' | 'decisions' | 'full';
 
@@ -26,19 +27,25 @@ export default function ReportsView() {
   const [copied, setCopied] = useState(false);
   const [snapshotSaved, setSnapshotSaved] = useState<string | null>(null);
 
-  const exportSnapshot = async () => {
-    const html = generateSnapshotHtml({
-      items,
-      milestones,
-      users,
-      preparedBy: settings?.currentUser?.name ?? 'Tether',
-    });
-    const saved = await api.export.save(`support-ai-snapshot-${new Date().toISOString().slice(0, 10)}.html`, html);
-    if (saved) {
-      setSnapshotSaved(saved);
-      setTimeout(() => setSnapshotSaved(null), 6000);
-    }
+  const snapshotHtml = () =>
+    generateSnapshotHtml({ items, milestones, users, preparedBy: settings?.currentUser?.name ?? 'Tether' });
+
+  const flashSaved = (saved: string | null) => {
+    if (!saved) return;
+    setSnapshotSaved(saved);
+    setTimeout(() => setSnapshotSaved(null), 6000);
   };
+
+  const stamp = () => new Date().toISOString().slice(0, 10);
+  const exportSnapshot = async () => flashSaved(await api.export.save(`support-ai-snapshot-${stamp()}.html`, snapshotHtml()));
+  const exportPdf = async () => flashSaved(await api.export.pdf(`support-ai-snapshot-${stamp()}.pdf`, snapshotHtml()));
+  const exportDeck = async () =>
+    flashSaved(
+      await api.export.save(
+        `support-ai-deck-${stamp()}.html`,
+        generateDeckHtml({ items, milestones, users, preparedBy: settings?.currentUser?.name ?? 'Tether' }),
+      ),
+    );
 
   const generated = useMemo(
     () => generateReport(kind, items, milestones, users),
@@ -68,8 +75,14 @@ export default function ReportsView() {
         <button onClick={() => void api.export.save(`${kind}-report-${new Date().toISOString().slice(0, 10)}.md`, content)}>
           <FileDown size={13} /> Save as file
         </button>
-        <button className="primary" onClick={() => void exportSnapshot()} title="Polished standalone HTML status page — opens in any browser, prints to PDF">
-          <Sparkles size={13} /> Leadership snapshot
+        <button className="primary" onClick={() => void exportSnapshot()} title="Animated standalone HTML status page — opens in any browser">
+          <Sparkles size={13} /> Snapshot (HTML)
+        </button>
+        <button className="primary" onClick={() => void exportDeck()} title="Full-screen slide deck — arrow keys to present, share as a single file">
+          <MonitorPlay size={13} /> Deck (HTML)
+        </button>
+        <button className="primary" onClick={() => void exportPdf()} title="Snapshot rendered straight to PDF">
+          <FileDown size={13} /> PDF
         </button>
       </div>
 

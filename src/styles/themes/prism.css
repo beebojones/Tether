@@ -1,0 +1,37 @@
+/* "Prism" — Meridian base, but each functional area carries its own hue tint:
+   cards pick up faint color washes from their content (danger cards blush red,
+   success cards go green, accent stays indigo). Multi-hue without noise. */
+:root {
+  --bg-app: #0c0f18;
+  --bg-sidebar: #10141f;
+  --bg-panel: #151a28;
+  --bg-raised: #1b2132;
+  --bg-hover: #202739;
+  --bg-active: #262e44;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+body {
+  background:
+    radial-gradient(1000px 550px at 0% -8%, rgba(110, 139, 255, 0.1), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(76, 195, 138, 0.05), transparent 55%),
+    radial-gradient(900px 550px at 50% 118%, rgba(242, 176, 76, 0.05), transparent 55%),
+    var(--bg-app) !important;
+}
+
+/* Hue-washed cards by tone */
+.dash-card { background: linear-gradient(180deg, rgba(110, 139, 255, 0.05), transparent 45%), var(--bg-panel); }
+.dash-card.danger { background: linear-gradient(180deg, rgba(242, 100, 124, 0.09), transparent 50%), var(--bg-panel); }
+.dash-card.warning { background: linear-gradient(180deg, rgba(242, 176, 76, 0.08), transparent 50%), var(--bg-panel); }
+.dash-card.success { background: linear-gradient(180deg, rgba(76, 195, 138, 0.08), transparent 50%), var(--bg-panel); }
+
+.board-col { background: linear-gradient(180deg, rgba(110, 139, 255, 0.04), transparent 40%), var(--bg-sidebar); }
+
+.sidebar-brand .logo, .ob-logo, .present-logo {
+  background: linear-gradient(135deg, #6e8bff 0%, #4cc38a 55%, #f2b04c 120%) !important;
+}
+.progress-fill, .pm-fill {
+  background: linear-gradient(90deg, #6e8bff, #4cb8c4) !important;
+}
