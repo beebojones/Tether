@@ -1,4 +1,4 @@
-# Keystone User Guide
+# Tether User Guide
 
 ## The basics
 

@@ -72,7 +72,7 @@ function buildSlides(
         </li>
       ))}
       {rows.length === 0 && <li className="p-none">None — clear.</li>}
-      {rows.length > 8 && <li className="p-none">+ {rows.length - 8} more in Keystone</li>}
+      {rows.length > 8 && <li className="p-none">+ {rows.length - 8} more in Tether</li>}
     </ul>
   );
 
@@ -80,7 +80,7 @@ function buildSlides(
 
   slides.push(
     <div className="present-title">
-      <div className="present-logo">K</div>
+      <div className="present-logo">T</div>
       <h1>Support AI</h1>
       <p>Project status walkthrough</p>
       <p className="p-date">{new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -136,7 +136,7 @@ function buildSlides(
   slides.push(
     <div className="present-title">
       <h1>Questions?</h1>
-      <p>Full detail lives in Keystone — every item on these slides is tracked, linked, and current.</p>
+      <p>Full detail lives in Tether — every item on these slides is tracked, linked, and current.</p>
     </div>,
   );
 

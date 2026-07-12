@@ -1,26 +1,33 @@
-# Releasing & Updating Keystone
+# Releasing & Updating Tether
 
 ## Build a release
 
 ```bash
 npm version patch            # or minor/major — updates package.json + git tag
 npm test                     # must be green
-npm run dist                 # → release/Keystone Setup <version>.exe (NSIS, per-user)
+npm run dist                 # → release/Tether Setup <version>-{arm64,x64}.exe
 ```
+
+Two installers are produced: **arm64** (John's Windows-on-ARM machine) and **x64**
+(standard corporate laptops — Mark). electron-builder rebuilds the native SQLite
+module per architecture during packaging; the `postdist` script restores the local
+arm64 build so `npm run dev` and `npm test` keep working afterwards. Close any
+running Tether/Electron instance before `npm run dist` — an open app locks the
+native module and `release/` directory.
 
 The installer is **per-user** (no admin rights needed) and creates Start-menu and
 desktop shortcuts. Uninstall via Windows Settings → Apps.
 
 ## Distribute to Mark (documented manual workflow)
 
-Keystone deliberately ships **without a self-updating downloader** — an updater that
+Tether deliberately ships **without a self-updating downloader** — an updater that
 fetches and executes remote binaries is exactly what enterprise security teams flag.
 Until signed infrastructure exists, releases move through the same trusted channel
 as the project data:
 
 1. Build the installer and compute its hash:
    ```powershell
-   Get-FileHash "release/Keystone Setup 0.1.0.exe" -Algorithm SHA256
+   Get-FileHash "release/Tether Setup 0.1.0.exe" -Algorithm SHA256
    ```
 2. Copy the installer into the shared folder under `releases/<version>/` together
    with `RELEASE_NOTES.md` and the SHA256 hash.
@@ -38,7 +45,7 @@ as the project data:
 ## Rollback
 
 Reinstall the previous installer from `releases/<version>/`, then restore the newest
-matching backup from `%APPDATA%/supportai-keystone/data/backups/` if a migration had
+matching backup from `%APPDATA%/supportai-tether/data/backups/` if a migration had
 already run.
 
 ## Release checklist

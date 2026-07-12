@@ -29,7 +29,7 @@ export default function BoardView() {
           onDrop={(e) => {
             e.preventDefault();
             setDragOver(null);
-            const id = e.dataTransfer.getData('text/keystone-item');
+            const id = e.dataTransfer.getData('text/tether-item');
             if (id) void api.items.update(id, { status });
           }}
         >
@@ -43,7 +43,7 @@ export default function BoardView() {
                 key={it.id}
                 className="board-card"
                 draggable
-                onDragStart={(e) => e.dataTransfer.setData('text/keystone-item', it.id)}
+                onDragStart={(e) => e.dataTransfer.setData('text/tether-item', it.id)}
                 onClick={() => openItem(it.id)}
                 role="button"
                 tabIndex={0}

@@ -14,7 +14,7 @@ export interface DbContext {
 }
 
 /**
- * Opens (or creates) the Keystone database, applies pending migrations,
+ * Opens (or creates) the Tether database, applies pending migrations,
  * and guarantees device identity metadata.
  *
  * Safety posture: WAL mode + integrity check on open + timestamped backup
@@ -22,7 +22,7 @@ export interface DbContext {
  */
 export function openDatabase(dataDir: string): DbContext {
   fs.mkdirSync(dataDir, { recursive: true });
-  const dbPath = path.join(dataDir, 'keystone.db');
+  const dbPath = path.join(dataDir, 'tether.db');
   const existed = fs.existsSync(dbPath);
 
   const db = new Database(dbPath);
@@ -114,7 +114,7 @@ export async function backupDatabase(ctx: DbContext): Promise<string> {
   const backupDir = path.join(ctx.dataDir, 'backups');
   fs.mkdirSync(backupDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const dest = path.join(backupDir, `keystone-${stamp}.db`);
+  const dest = path.join(backupDir, `tether-${stamp}.db`);
   await ctx.db.backup(dest);
   return dest;
 }

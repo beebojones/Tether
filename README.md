@@ -1,4 +1,4 @@
-# Keystone — Support AI Project Workspace
+# Tether — Support AI Project Workspace
 
 The purpose-built desktop workspace and single source of truth for building
 McKesson's Support AI initiative. Tracks work items, requirements, decisions,
@@ -29,10 +29,10 @@ npm run dist        # Windows installer → release/
 
 | What | Where |
 |---|---|
-| Database | `%APPDATA%/supportai-keystone/data/keystone.db` (SQLite, WAL) |
-| Backups | `%APPDATA%/supportai-keystone/data/backups/` (auto before migrations + manual) |
-| Attachments | `%APPDATA%/supportai-keystone/data/attachments/` (content-addressed) |
-| Settings | `%APPDATA%/supportai-keystone/settings.json` (no secrets) |
+| Database | `%APPDATA%/supportai-tether/data/tether.db` (SQLite, WAL) |
+| Backups | `%APPDATA%/supportai-tether/data/backups/` (auto before migrations + manual) |
+| Attachments | `%APPDATA%/supportai-tether/data/attachments/` (content-addressed) |
+| Settings | `%APPDATA%/supportai-tether/settings.json` (no secrets) |
 | Shared sync data | `<your shared folder>/ops/…` and `/blobs/…` (JSONL change files) |
 
 The app makes **no network calls of its own** — synchronization rides entirely on

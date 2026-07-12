@@ -95,8 +95,8 @@ interface Bridge {
 
 declare global {
   interface Window {
-    keystone: Bridge;
+    tether: Bridge;
   }
 }
 
-export const api: Bridge = window.keystone;
+export const api: Bridge = window.tether;

@@ -45,7 +45,7 @@ export default function App() {
   }, [setPalette, back]);
 
   if (!ready) {
-    return <div className="boot">Loading Keystone…</div>;
+    return <div className="boot">Loading Tether…</div>;
   }
 
   if (!settings?.currentUser) {

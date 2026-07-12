@@ -55,9 +55,9 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="logo">K</div>
+        <div className="logo">T</div>
         <div>
-          <div className="name">Keystone</div>
+          <div className="name">Tether</div>
           <div className="sub">Support AI Workspace</div>
         </div>
       </div>

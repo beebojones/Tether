@@ -92,6 +92,6 @@ const api = {
   },
 };
 
-contextBridge.exposeInMainWorld('keystone', api);
+contextBridge.exposeInMainWorld('tether', api);
 
-export type KeystoneApi = typeof api;
+export type TetherApi = typeof api;

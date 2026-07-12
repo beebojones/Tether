@@ -1,4 +1,4 @@
-// SyncTransport: the seam between Keystone and whatever moves bytes between machines.
+// SyncTransport: the seam between Tether and whatever moves bytes between machines.
 // v1 ships FolderTransport (a OneDrive/SharePoint-synced folder). The interface is
 // deliberately dumb — append-only batches out, batches in — so a future Azure SQL /
 // Dataverse / internal API transport slots in without touching merge logic.

@@ -1,4 +1,4 @@
-# Security Review Document — Keystone
+# Security Review Document — Tether
 
 *For McKesson security / IT reviewers. Last updated 2026-07-12.*
 
@@ -11,7 +11,7 @@ customer data, no credentials are intended or required to be stored.
 
 ## Where it is stored
 
-- **Local:** SQLite database at `%APPDATA%/supportai-keystone/data/keystone.db`
+- **Local:** SQLite database at `%APPDATA%/supportai-tether/data/tether.db`
   on each user's McKesson-managed machine. Backups in `data/backups/`.
 - **Shared (only when sync is configured):** JSON change files and attachment blobs
   in a OneDrive/SharePoint-synced folder chosen by the users — i.e., inside the
@@ -77,6 +77,6 @@ Electron, React, better-sqlite3, zustand, lucide-react, TipTap (editor), Vite/es
 ## How to review
 
 Everything is local and inspectable: source in this repo; runtime files under
-`%APPDATA%/supportai-keystone/`; sync artifacts are human-readable JSONL. Run
+`%APPDATA%/supportai-tether/`; sync artifacts are human-readable JSONL. Run
 `npm test` for the data-safety test suite (corruption quarantine, conflict handling,
 offline queueing).

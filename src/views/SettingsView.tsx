@@ -47,7 +47,7 @@ export default function SettingsView() {
 
       <Section title="Collaboration & sync">
         <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 10 }}>
-          Keystone shares the project through a folder synced by OneDrive or SharePoint.
+          Tether shares the project through a folder synced by OneDrive or SharePoint.
           Each computer writes only its own change files — the database itself never crosses the wire, which avoids corruption.
         </p>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>

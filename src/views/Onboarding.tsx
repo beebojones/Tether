@@ -45,8 +45,8 @@ export default function Onboarding() {
   return (
     <div className="onboarding">
       <div className="ob-card">
-        <div className="ob-logo">K</div>
-        <h1>Welcome to Keystone</h1>
+        <div className="ob-logo">T</div>
+        <h1>Welcome to Tether</h1>
         <p className="muted">The workspace for the Support AI project. Set up your identity to begin.</p>
 
         <div className="form-row" style={{ marginTop: 24 }}>

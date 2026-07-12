@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path from 'node:path';
 import { openDatabase } from './db/db';
 import { Store } from './db/store';
@@ -68,6 +68,21 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
+    try {
+      boot();
+    } catch (err) {
+      // Fail loudly, never hang on a blank window — corrupt DB instructions included.
+      console.error('[tether boot]', err);
+      dialog.showErrorBox(
+        'Tether could not start',
+        (err instanceof Error ? err.message : String(err)) +
+          '\n\nYour data folder is %APPDATA%/supportai-tether/data — backups live in its backups/ subfolder.',
+      );
+      app.quit();
+    }
+  });
+
+  function boot(): void {
     const userData = app.getPath('userData');
     const settings = new Settings(userData);
     const ctx = openDatabase(path.join(userData, 'data'));
@@ -96,7 +111,7 @@ if (!gotLock) {
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
-  });
+  }
 
   app.on('window-all-closed', () => {
     app.quit();

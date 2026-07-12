@@ -14,7 +14,7 @@ import { SyncEngine } from '../electron/sync/engine';
 import { loadSeedData } from '../electron/db/seed';
 
 function tmp(name: string): string {
-  const p = fs.mkdtempSync(path.join(os.tmpdir(), `keystone-${name}-`));
+  const p = fs.mkdtempSync(path.join(os.tmpdir(), `tether-${name}-`));
   return p;
 }
 
@@ -220,7 +220,7 @@ test('database integrity guard quarantines corruption', () => {
   const ctx = openDatabase(dir);
   ctx.db.close();
   // Stomp the file header.
-  const dbPath = path.join(dir, 'keystone.db');
+  const dbPath = path.join(dir, 'tether.db');
   const fd = fs.openSync(dbPath, 'r+');
   fs.writeSync(fd, Buffer.from('GARBAGEGARBAGEGARBAGE'), 0, 21, 0);
   fs.closeSync(fd);

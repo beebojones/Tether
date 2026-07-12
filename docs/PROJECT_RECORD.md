@@ -1,10 +1,10 @@
-# Keystone — Living Project Record
+# Tether — Living Project Record
 
 *Last updated: 2026-07-12*
 
 ## Vision
 
-Keystone is the purpose-built workspace and single source of truth for building
+Tether is the purpose-built workspace and single source of truth for building
 McKesson's Support AI initiative. It replaces scattered chats, emails, notes, and
 spreadsheets with one fast desktop app that John and Mark share from separate
 computers — tracking work, requirements, decisions, risks, blockers, system-access
@@ -22,9 +22,9 @@ leadership-ready updates on demand.
 
 ## Naming
 
-Working name: **Keystone** (the stone that locks the arch — single source of truth).
-Final name not yet ratified by John. Other candidates presented: Waypoint, Meridian,
-Foundry, Northstar. Renaming later is a string + installer-id change; no data impact.
+Name: **Tether** — chosen by John (2026-07-12): the app that keeps two computers,
+two people, and one project tied together. Earlier working name "Keystone" retired;
+repo folder name is historical.
 
 ## Terminology (selected)
 
@@ -86,6 +86,7 @@ so a direction swap is a token change.
 | 6 | 2026-07-12 | Per-type ident prefixes (REQ-41, DEC-12) | Self-describing IDs in speech and reports |
 | 7 | 2026-07-12 | UUID canonical identity, ident display-only | Renumbering never breaks links |
 | 8 | 2026-07-12 | Tests run under Electron's Node (ELECTRON_RUN_AS_NODE) | Single native-module build for app + tests |
+| 9 | 2026-07-12 | Ship both arm64 + x64 Windows installers | John's dev machine is Windows-on-ARM (Snapdragon); Mark's corporate laptop presumed x64. electron-builder rebuilds better-sqlite3 per arch during dist |
 
 ## Status
 
@@ -131,5 +132,5 @@ npm test             # data-layer + sync tests
 npm run dist         # NSIS installer into release/
 ```
 
-Data lives in `%APPDATA%/supportai-keystone/data/keystone.db` (per user), backups in
+Data lives in `%APPDATA%/supportai-tether/data/tether.db` (per user), backups in
 `data/backups/`, settings in `settings.json` alongside.

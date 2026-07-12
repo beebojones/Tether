@@ -1,6 +1,6 @@
 {
-  "name": "supportai-keystone",
-  "productName": "Keystone",
+  "name": "supportai-tether",
+  "productName": "Tether",
   "version": "0.1.0",
   "description": "Purpose-built project workspace for the McKesson Support AI initiative",
   "main": "dist-electron/main.js",
@@ -14,6 +14,7 @@
     "build:main": "node scripts/build-main.mjs",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "dist": "npm run build && electron-builder --win",
+    "postdist": "electron-rebuild -f -w better-sqlite3",
     "test": "node scripts/run-tests.mjs"
   },
   "dependencies": {
@@ -59,8 +60,8 @@
     "vite": "^7.0.0"
   },
   "build": {
-    "appId": "com.mckesson.supportai.keystone",
-    "productName": "Keystone",
+    "appId": "com.mckesson.supportai.tether",
+    "productName": "Tether",
     "directories": {
       "output": "release"
     },
@@ -76,6 +77,7 @@
         {
           "target": "nsis",
           "arch": [
+            "arm64",
             "x64"
           ]
         }
