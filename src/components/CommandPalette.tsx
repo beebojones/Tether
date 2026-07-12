@@ -31,6 +31,7 @@ const NAV_COMMANDS: NavCommand[] = [
   { kind: 'nav', label: 'Go to Meetings', route: { view: 'meetings' } },
   { kind: 'nav', label: 'Go to Risks & Blockers', route: { view: 'risks' } },
   { kind: 'nav', label: 'Go to Reports', route: { view: 'reports' } },
+  { kind: 'nav', label: 'Start Presentation Mode', route: { view: 'present' } },
   { kind: 'nav', label: 'Go to Activity', route: { view: 'activity' } },
   { kind: 'nav', label: 'Go to Conflicts', route: { view: 'conflicts' } },
   { kind: 'nav', label: 'Go to Settings', route: { view: 'settings' } },

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-electron/
+dist-tests/
 release/
 *.local.json
 .env

@@ -12,6 +12,7 @@ export type Route =
   | { view: 'meetings' }
   | { view: 'risks' }
   | { view: 'reports' }
+  | { view: 'present' }
   | { view: 'activity' }
   | { view: 'conflicts' }
   | { view: 'settings' }

@@ -1,0 +1,135 @@
+# Keystone — Living Project Record
+
+*Last updated: 2026-07-12*
+
+## Vision
+
+Keystone is the purpose-built workspace and single source of truth for building
+McKesson's Support AI initiative. It replaces scattered chats, emails, notes, and
+spreadsheets with one fast desktop app that John and Mark share from separate
+computers — tracking work, requirements, decisions, risks, blockers, system-access
+requests, meetings, milestones, and releases, and turning all of it into
+leadership-ready updates on demand.
+
+## Users
+
+- **John** — primary organizer, knowledge systems builder, support-domain expert.
+  Needs powerful editing, organization, reporting, presentation.
+- **Mark** — technical collaborator. Needs a shared current view, full edit
+  capability from his own computer.
+- **Secondary** (exports only): Allen, George, Jessica, knowledge/support
+  leadership, security and IT reviewers.
+
+## Naming
+
+Working name: **Keystone** (the stone that locks the arch — single source of truth).
+Final name not yet ratified by John. Other candidates presented: Waypoint, Meridian,
+Foundry, Northstar. Renaming later is a string + installer-id change; no data impact.
+
+## Terminology (selected)
+
+Umbrella noun: **Work Item**. Types with per-type ident sequences:
+
+| Type | Prefix | Statuses |
+|---|---|---|
+| Task | TASK- | backlog → todo → in progress → in review → blocked → done / cancelled |
+| Feature | FEAT- | (work statuses) |
+| Requirement | REQ- | (work statuses) |
+| User Story | STORY- | (work statuses) |
+| Decision | DEC- | proposed / discussing / approved / rejected / revisit / superseded |
+| Risk | RISK- | open / mitigating / accepted / closed |
+| Blocker | BLK- | active / workaround / resolved |
+| Access Request | ACC- | identified / not requested / preparing / requested / under review / info needed / approved / partially approved / granted / denied / expired / no longer needed |
+| Meeting Note | MTG- | scheduled / held / summarized |
+| Idea | IDEA- | (work statuses) |
+| Open Question | Q- | open / answered / parked |
+| Defect | DEF- | (work statuses) |
+| Research | RES- | (work statuses) |
+
+Rationale: "Work Item" is neutral and leadership-friendly; per-type prefixes make
+IDs self-describing in conversation ("ACC-5 is still under review"). Canonical
+identity is a UUID; the ident is display-level and can be renumbered safely on
+sync collisions (references never break because links use UUIDs).
+
+Link kinds: relates, blocks/blocked-by, implements, supports, shaped-by,
+requires-access, discussed-in, validates, supersedes, parent/child.
+
+## Architecture (selected)
+
+- **Electron + React + TypeScript** desktop app (user-confirmed 2026-07-12).
+  Chosen over PySide6/pywebview/Tauri because the Jira-grade editor requires
+  ProseMirror-class web tech; MSVC present for native modules; NSIS per-user
+  installer needs no admin rights.
+- **SQLite (better-sqlite3, WAL)** local store per machine — always fully usable offline.
+- **Op-log synchronization** over a shared folder (see SYNC_ARCHITECTURE.md).
+- Main process owns all data access; renderer talks through a typed contextBridge
+  IPC surface (contextIsolation on, nodeIntegration off, strict CSP in prod builds).
+- FTS5 powers search; field-granular oplog powers sync, history, and audit.
+
+## Design direction (working selection)
+
+**Meridian** — Linear-class dark UI: deep neutral surfaces (#0D1017 base), indigo
+accent (#6E8BFF), high density, subtle depth, crisp Lucide icons, Segoe UI Variable.
+Alternatives presented (Graphite & Ember warm-dark, Aurora Glass, Slate Pro light)
+remain open until John ratifies; all styling flows from `src/styles/tokens.css`
+so a direction swap is a token change.
+
+## Decisions log
+
+| # | Date | Decision | Why |
+|---|---|---|---|
+| 1 | 2026-07-12 | Electron + React + TS (user-confirmed) | Editor fidelity; toolchain present; packaging |
+| 2 | 2026-07-12 | better-sqlite3 over node:sqlite | Battle-tested; MSVC available; node:sqlite still experimental |
+| 3 | 2026-07-12 | Folder-based op-log sync as v1 transport | Zero new services to approve; data stays in M365 tenant; SQLite file itself never shared |
+| 4 | 2026-07-12 | Field-level LWW + surfaced conflicts for title/body | Silent scalar merges are fine; content merges must be human-reviewed |
+| 5 | 2026-07-12 | Ident collisions resolved by smaller-UUID-keeps rule | Deterministic on both devices; converges without ping-pong (test-covered) |
+| 6 | 2026-07-12 | Per-type ident prefixes (REQ-41, DEC-12) | Self-describing IDs in speech and reports |
+| 7 | 2026-07-12 | UUID canonical identity, ident display-only | Renumbering never breaks links |
+| 8 | 2026-07-12 | Tests run under Electron's Node (ELECTRON_RUN_AS_NODE) | Single native-module build for app + tests |
+
+## Status
+
+### Done
+- Repo, toolchain, build scripts, typecheck clean
+- Schema v1 + migration runner + pre-migration auto-backup + corruption quarantine
+- Store DAL: items/links/comments/versions/activity/milestones/releases/views/users
+- Oplog with lamport clocks + basedOn causality; FTS5 search
+- Sync engine + FolderTransport; conflict surfacing + resolution (keep/use/merge)
+- App shell: Meridian tokens, sidebar, topbar w/ sync pill, command palette (Ctrl+K)
+- Views: Dashboard (live cards + explained project health), All Work (filters/group/sort),
+  Board (drag between statuses), Roadmap (milestones/releases + progress), Access Tracker,
+  Decisions, Meetings, Risks & Blockers, Reports (5 generated report types + copy/export),
+  Activity feed, Conflicts review, Settings (identity/sync/sample data/backup), Onboarding
+- Item detail: title/body autosave editing, type-specific structured fields, links,
+  comments, attachments, activity, version snapshots + compare/restore
+- Seeded Support AI sample project (23 items, linked, SAMPLE-flagged, one-click remove)
+- 9 passing tests incl. two-device convergence, conflicts, ident collisions, offline queue
+
+### In progress
+- Rich text editor (TipTap): slash menu, smart links, tables, callouts — currently a
+  clean autosaving plain editor stores the same doc format the rich editor will read
+
+### Not started
+- Meeting-note text→item conversion flow
+- Presentation mode
+- Packaging (electron-builder NSIS) + update workflow docs
+- Saved views UI, relationship graph view, PDF/DOCX export renderers
+
+## Known limitations
+- Body editor is plain-text v1 (doc format already rich-compatible)
+- Sync latency = OneDrive/SharePoint file propagation (seconds to ~a minute typical)
+- Attachment blobs sync on demand; very large files bounded at 100 MB
+- No per-item permissions — the shared folder IS the access boundary (by design for a 2-person team)
+
+## How to run
+
+```
+npm install
+npm run rebuild      # once, builds better-sqlite3 for Electron
+npm run dev          # dev app (Vite + Electron)
+npm test             # data-layer + sync tests
+npm run dist         # NSIS installer into release/
+```
+
+Data lives in `%APPDATA%/supportai-keystone/data/keystone.db` (per user), backups in
+`data/backups/`, settings in `settings.json` alongside.

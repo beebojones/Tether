@@ -13,6 +13,7 @@ import MeetingsView from './views/MeetingsView';
 import RisksView from './views/RisksView';
 import RoadmapView from './views/RoadmapView';
 import ReportsView from './views/ReportsView';
+import Presentation from './views/Presentation';
 import ActivityView from './views/ActivityView';
 import ConflictsView from './views/ConflictsView';
 import SettingsView from './views/SettingsView';
@@ -63,6 +64,11 @@ export default function App() {
   );
 }
 
+function PresentRoute() {
+  const { back } = useApp();
+  return <Presentation onExit={back} />;
+}
+
 function renderRoute(route: ReturnType<typeof useApp.getState>['route']) {
   switch (route.view) {
     case 'dashboard': return <Dashboard />;
@@ -74,6 +80,7 @@ function renderRoute(route: ReturnType<typeof useApp.getState>['route']) {
     case 'meetings': return <MeetingsView />;
     case 'risks': return <RisksView />;
     case 'reports': return <ReportsView />;
+    case 'present': return <PresentRoute />;
     case 'activity': return <ActivityView />;
     case 'conflicts': return <ConflictsView />;
     case 'settings': return <SettingsView />;

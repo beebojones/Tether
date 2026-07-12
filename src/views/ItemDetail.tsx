@@ -11,6 +11,8 @@ import { api, type LinkedItem } from '../api';
 import { useApp, userById } from '../store';
 import { TypeIcon, StatusBadge, PriorityMark, Avatar, Modal, fmtDateTime, fmtDate } from '../components/ui';
 import ExtraFields from '../components/ExtraFields';
+import RichEditor from '../editor/RichEditor';
+import ConvertSelection from '../components/ConvertSelection';
 import './item-detail.css';
 
 export default function ItemDetail({ id }: { id: string }) {
@@ -24,6 +26,7 @@ export default function ItemDetail({ id }: { id: string }) {
   const [versions, setVersions] = useState<ItemVersion[]>([]);
   const [tab, setTab] = useState<'comments' | 'activity' | 'versions'>('comments');
   const [showLink, setShowLink] = useState(false);
+  const [selectionText, setSelectionText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -84,7 +87,15 @@ export default function ItemDetail({ id }: { id: string }) {
 
         <TitleEditor key={item.id + item.updatedAt + ':t'} value={item.title} onSave={(title) => title.trim() && update({ title: title.trim() })} />
 
-        <BodyEditor key={item.id + ':b'} item={item} />
+        <RichEditor
+          key={item.id + ':b'}
+          content={item.body}
+          onSave={async (body, bodyText) => { await api.items.update(item.id, { body, bodyText }); }}
+          onSelectionText={setSelectionText}
+        />
+        {selectionText.trim().length > 3 && (
+          <ConvertSelection sourceItem={item} text={selectionText} onConverted={() => { setSelectionText(''); void reload(); }} />
+        )}
 
         <ExtraFields item={item} onSave={(extra) => update({ extra })} />
 
@@ -246,46 +257,6 @@ function TitleEditor({ value, onSave }: { value: string; onSave: (v: string) => 
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       aria-label="Title"
     />
-  );
-}
-
-/** v1 body editor: plain text with autosave; stores a minimal rich-doc so the
-    upcoming rich editor opens the same content. Save status always visible. */
-function BodyEditor({ item }: { item: WorkItem }) {
-  const [text, setText] = useState(item.bodyText);
-  const [saveState, setSaveState] = useState<'saved' | 'saving' | 'dirty'>('saved');
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const save = useCallback(async (t: string) => {
-    setSaveState('saving');
-    const body = t.trim()
-      ? JSON.stringify({ type: 'doc', content: t.split(/\n{2,}/).map((p) => ({ type: 'paragraph', content: p ? [{ type: 'text', text: p }] : [] })) })
-      : '';
-    await api.items.update(item.id, { body, bodyText: t });
-    setSaveState('saved');
-  }, [item.id]);
-
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  return (
-    <div className="body-editor">
-      <textarea
-        value={text}
-        placeholder="Add a description… (rich editor coming in the next update)"
-        onChange={(e) => {
-          setText(e.target.value);
-          setSaveState('dirty');
-          clearTimeout(timer.current);
-          timer.current = setTimeout(() => void save(e.target.value), 900);
-        }}
-        onBlur={() => saveState !== 'saved' && void save(text)}
-        rows={Math.max(4, Math.min(18, text.split('\n').length + 1))}
-        aria-label="Description"
-      />
-      <div className={`save-state ${saveState}`}>
-        {saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes'}
-      </div>
-    </div>
   );
 }
 

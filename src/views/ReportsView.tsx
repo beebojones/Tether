@@ -1,6 +1,6 @@
 // Leadership reporting: generate a status report from live data, review/edit, export.
 import { useMemo, useState } from 'react';
-import { FileDown, ClipboardCopy, RefreshCw } from 'lucide-react';
+import { FileDown, ClipboardCopy, RefreshCw, MonitorPlay } from 'lucide-react';
 import type { WorkItem } from '@shared/types';
 import { STATUS_LABEL, TYPE_LABEL } from '@shared/types';
 import { api } from '../api';
@@ -18,7 +18,7 @@ const REPORT_LABEL: Record<ReportKind, string> = {
 };
 
 export default function ReportsView() {
-  const { milestones, users } = useApp();
+  const { milestones, users, navigate } = useApp();
   const { items } = useItems({}, { field: 'updatedAt', dir: 'desc' }, 2000);
   const [kind, setKind] = useState<ReportKind>('leadership');
   const [draft, setDraft] = useState<string | null>(null);
@@ -41,6 +41,7 @@ export default function ReportsView() {
       <div className="view-header">
         <h1>Reports</h1>
         <div className="spacer" />
+        <button onClick={() => navigate({ view: 'present' })}><MonitorPlay size={13} /> Presentation mode</button>
         <select value={kind} onChange={(e) => { setKind(e.target.value as ReportKind); setDraft(null); }} aria-label="Report type">
           {(Object.keys(REPORT_LABEL) as ReportKind[]).map((k) => (
             <option key={k} value={k}>{REPORT_LABEL[k]}</option>

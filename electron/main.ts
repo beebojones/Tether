@@ -42,8 +42,11 @@ function createWindow(): void {
 
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
+    // Mirror renderer console to stdout in dev so failures are visible headlessly.
+    win.webContents.on('console-message', (_e, level, message, line, sourceId) => {
+      if (level >= 2) console.log(`[renderer:${level}] ${message} (${sourceId}:${line})`);
+    });
     void win.loadURL(devUrl);
-    win.webContents.openDevTools({ mode: 'detach' });
   } else {
     void win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
