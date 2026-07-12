@@ -64,7 +64,7 @@ export default function Onboarding() {
         </div>
 
         <div className="form-row">
-          <label>Shared project folder <span className="muted">(optional — set later in Settings)</span></label>
+          <div className="rail-label" style={{ textTransform: 'none', letterSpacing: 0 }}>Shared project folder <span className="muted">(optional — set later in Settings)</span></div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button onClick={() => void api.settings.chooseSyncFolder().then((f) => f && setSyncFolder(f))}>
               Choose folder…

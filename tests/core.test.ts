@@ -226,3 +226,52 @@ test('database integrity guard quarantines corruption', () => {
   fs.closeSync(fd);
   assert.throws(() => openDatabase(dir), /integrity|malformed|not a database/i);
 });
+
+test('out-of-order remote ops: set/delete arriving before create are buffered, not lost', () => {
+  const a = mkStore('reorder', 'john');
+  // Simulate device C receiving B's ops about an item BEFORE A's create of it.
+  const itemId = '00000000-aaaa-4000-8000-000000000001';
+  const setOp = {
+    opId: 'op-set-1', deviceId: 'device-B', actorId: 'mark', lamport: 10, at: new Date().toISOString(),
+    entity: 'item' as const, entityId: itemId, action: 'set' as const,
+    payload: { fields: { status: 'in_progress' }, basedOn: { status: null } },
+  };
+  const createOp = {
+    opId: 'op-create-1', deviceId: 'device-A', actorId: 'john', lamport: 5, at: new Date().toISOString(),
+    entity: 'item' as const, entityId: itemId, action: 'create' as const,
+    payload: {
+      record: {
+        id: itemId, ident: 'TASK-900', type: 'task', title: 'Reordered item', body: '', bodyText: '',
+        status: 'todo', priority: 'medium', ownerId: null, reporterId: 'john', milestoneId: null,
+        releaseId: null, parentId: null, startDate: null, dueDate: null, completedAt: null,
+        effort: null, confidence: null, riskLevel: null, businessValue: null, leadershipVisible: 0,
+        progress: null, tags: [], extra: {}, archived: 0, sample: 0,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        createdBy: 'john', updatedBy: 'john',
+      },
+    },
+  };
+
+  // Set arrives first — must buffer, item must not exist yet.
+  a.store.applyRemoteOps([setOp]);
+  assert.equal(a.store.getItem(itemId), null);
+
+  // Create arrives — item appears AND the buffered set replays on top.
+  a.store.applyRemoteOps([createOp]);
+  const item = a.store.getItem(itemId);
+  assert.ok(item, 'item created');
+  assert.equal(item!.status, 'in_progress', 'buffered set applied after create');
+
+  // Delete-before-create must not resurrect: fresh entity, delete first, then create.
+  const item2 = '00000000-bbbb-4000-8000-000000000002';
+  a.store.applyRemoteOps([
+    { ...setOp, opId: 'op-del-2', entityId: item2, action: 'delete' as const, lamport: 20, payload: {} },
+  ]);
+  a.store.applyRemoteOps([
+    { ...createOp, opId: 'op-create-2', entityId: item2, lamport: 6,
+      payload: { record: { ...(createOp.payload.record as Record<string, unknown>), id: item2, ident: 'TASK-901' } } },
+  ]);
+  assert.equal(a.store.getItem(item2), null, 'delete-before-create does not resurrect the item');
+
+  a.ctx.db.close();
+});

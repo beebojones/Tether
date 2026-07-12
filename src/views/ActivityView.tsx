@@ -21,7 +21,10 @@ export default function ActivityView() {
       <div className="item-table" style={{ padding: '4px 0' }}>
         {entries.map((a) => (
           <div key={a.id} className="activity-row" style={{ padding: '6px 14px', cursor: a.itemId ? 'pointer' : 'default' }}
-            onClick={() => a.itemId && openItem(a.itemId)}>
+            onClick={() => a.itemId && openItem(a.itemId)}
+            role={a.itemId ? 'button' : undefined}
+            tabIndex={a.itemId ? 0 : undefined}
+            onKeyDown={(e) => e.key === 'Enter' && a.itemId && openItem(a.itemId)}>
             <span className="muted" style={{ fontSize: 'var(--fs-xs)', minWidth: 120 }}>{fmtDateTime(a.at)}</span>
             <span style={{ fontSize: 'var(--fs-sm)' }}>{describeActivity(a, users)}</span>
           </div>

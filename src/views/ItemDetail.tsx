@@ -1,13 +1,13 @@
-// Item detail: title/body editing, type-specific fields, right rail properties,
+// Item detail: title/body rich editing, type-specific fields, right rail properties,
 // links, comments, attachments, activity, versions.
-// Body uses a debounced plain editor v1 — replaced by the rich editor module (in progress).
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Archive, ArchiveRestore, Trash2, Link2, Paperclip, MessageSquare, History, X, ExternalLink, Plus,
 } from 'lucide-react';
 import type { WorkItem, Comment, Attachment, LinkKind, Priority, ItemVersion, ActivityEntry } from '@shared/types';
 import { TYPE_LABEL, statusesForType, STATUS_LABEL, PRIORITIES, LINK_KINDS, LINK_LABEL } from '@shared/types';
 import { api, type LinkedItem } from '../api';
+import { docToText, textToDoc } from '@shared/doc';
 import { useApp, userById } from '../store';
 import { TypeIcon, StatusBadge, PriorityMark, Avatar, Modal, fmtDateTime, fmtDate } from '../components/ui';
 import ExtraFields from '../components/ExtraFields';
@@ -29,6 +29,9 @@ export default function ItemDetail({ id }: { id: string }) {
   const [selectionText, setSelectionText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  // Bumped when body content is replaced from outside the editor (version restore,
+  // conflict resolution) — forces the editor to remount with the new content.
+  const [editorEpoch, setEditorEpoch] = useState(0);
 
   const reload = useCallback(async () => {
     const it = await api.items.get(id);
@@ -85,10 +88,10 @@ export default function ItemDetail({ id }: { id: string }) {
           </button>
         </div>
 
-        <TitleEditor key={item.id + item.updatedAt + ':t'} value={item.title} onSave={(title) => title.trim() && update({ title: title.trim() })} />
+        <TitleEditor key={item.id + ':t'} value={item.title} onSave={(title) => title.trim() && update({ title: title.trim() })} />
 
         <RichEditor
-          key={item.id + ':b'}
+          key={`${item.id}:b:${editorEpoch}`}
           content={item.body}
           onSave={async (body, bodyText) => { await api.items.update(item.id, { body, bodyText }); }}
           onSelectionText={setSelectionText}
@@ -131,7 +134,7 @@ export default function ItemDetail({ id }: { id: string }) {
           </div>
           {attachments.map((a) => (
             <div key={a.id} className="link-row" onClick={() => void api.attachments.open(a.id).catch((e) => alert(e.message))}
-              role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && void api.attachments.open(a.id)}>
+              role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && void api.attachments.open(a.id).catch((err) => alert(err.message))}>
               <ExternalLink size={13} style={{ color: 'var(--text-muted)' }} />
               <span className="item-title">{a.filename}</span>
               <span className="muted" style={{ fontSize: 'var(--fs-xs)' }}>{fmtSize(a.size)} · {userById(users, a.uploadedBy)?.name ?? a.uploadedBy} · {fmtDate(a.createdAt)}</span>
@@ -157,7 +160,16 @@ export default function ItemDetail({ id }: { id: string }) {
           </div>
           {tab === 'comments' && <Comments itemId={id} comments={comments} onChanged={reload} />}
           {tab === 'activity' && <ActivityList entries={activity} />}
-          {tab === 'versions' && <VersionList versions={versions} current={item} onRestore={(v) => update({ title: v.title, body: v.body })} />}
+          {tab === 'versions' && (
+            <VersionList
+              versions={versions}
+              current={item}
+              onRestore={(v) => {
+                update({ title: v.title, body: v.body, bodyText: docToText(v.body) });
+                setEditorEpoch((e) => e + 1); // remount the editor with restored content
+              }}
+            />
+          )}
         </section>
       </div>
 
@@ -247,13 +259,23 @@ function RailField({ label, children }: { label: string; children: React.ReactNo
 
 function TitleEditor({ value, onSave }: { value: string; onSave: (v: string) => void }) {
   const [v, setV] = useState(value);
+  const [focused, setFocused] = useState(false);
+  // Follow external changes (sync, restore) only while the user isn't typing here —
+  // never clobber an in-progress edit with a refetch.
+  useEffect(() => {
+    if (!focused) setV(value);
+  }, [value, focused]);
   return (
     <input
       className="detail-title"
       type="text"
       value={v}
       onChange={(e) => setV(e.target.value)}
-      onBlur={() => v !== value && onSave(v)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => {
+        setFocused(false);
+        if (v !== value) onSave(v);
+      }}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       aria-label="Title"
     />
@@ -295,11 +317,18 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (t: string[])
 function Comments({ itemId, comments, onChanged }: { itemId: string; comments: Comment[]; onChanged: () => void }) {
   const users = useApp((s) => s.users);
   const [text, setText] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
   const submit = async () => {
     if (!text.trim()) return;
-    const body = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
-    await api.comments.add(itemId, body, text);
+    await api.comments.add(itemId, textToDoc(text), text);
     setText('');
+    onChanged();
+  };
+  const saveEdit = async () => {
+    if (!editingId || !editText.trim()) return;
+    await api.comments.update(editingId, textToDoc(editText), editText);
+    setEditingId(null);
     onChanged();
   };
   return (
@@ -312,11 +341,27 @@ function Comments({ itemId, comments, onChanged }: { itemId: string; comments: C
               <strong>{userById(users, c.authorId)?.name ?? c.authorId}</strong>
               <span className="muted">{fmtDateTime(c.createdAt)}{c.updatedAt ? ' (edited)' : ''}</span>
               <span style={{ flex: 1 }} />
+              <button className="ghost" title="Edit comment" onClick={() => { setEditingId(c.id); setEditText(c.bodyText); }}>
+                Edit
+              </button>
               <button className="ghost" title="Delete comment" onClick={() => void api.comments.delete(c.id).then(onChanged)}>
                 <X size={11} />
               </button>
             </div>
-            <div className="comment-body">{c.bodyText}</div>
+            {editingId === c.id ? (
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <textarea value={editText} rows={2} style={{ flex: 1 }} autoFocus aria-label="Edit comment"
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.ctrlKey) void saveEdit();
+                    if (e.key === 'Escape') setEditingId(null);
+                  }} />
+                <button className="primary" onClick={() => void saveEdit()} disabled={!editText.trim()}>Save</button>
+                <button className="ghost" onClick={() => setEditingId(null)}>Cancel</button>
+              </div>
+            ) : (
+              <div className="comment-body">{c.bodyText}</div>
+            )}
           </div>
         </div>
       ))}
@@ -409,25 +454,6 @@ function VersionList({ versions, current, onRestore }: { versions: ItemVersion[]
       )}
     </div>
   );
-}
-
-function docToText(body: string): string {
-  if (!body) return '';
-  try {
-    const doc = JSON.parse(body) as { content?: unknown[] };
-    const walk = (nodes: unknown[]): string =>
-      nodes
-        .map((n) => {
-          const node = n as { type?: string; text?: string; content?: unknown[] };
-          if (node.text) return node.text;
-          const inner = node.content ? walk(node.content) : '';
-          return node.type === 'paragraph' || node.type?.startsWith('heading') ? inner + '\n\n' : inner;
-        })
-        .join('');
-    return walk(doc.content ?? []).trim();
-  } catch {
-    return body;
-  }
 }
 
 function LinkDialog({ itemId, onClose }: { itemId: string; onClose: () => void }) {

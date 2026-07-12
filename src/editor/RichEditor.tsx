@@ -145,13 +145,15 @@ export default function RichEditor({ content, placeholder, onSave, onSelectionTe
   };
 
   // Flush on unmount / blur so nothing is lost.
+  // Flush on unmount AND on editor recreation (extensions change, e.g. a new user
+  // appears for mentions) so no in-flight edit is ever dropped.
   useEffect(
     () => () => {
       clearTimeout(timer.current);
       if (latest.current) void flush();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [extensions],
   );
 
   if (!editor) return null;

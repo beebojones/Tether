@@ -36,6 +36,17 @@ export class SyncEngine {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
     if (transport) {
+      // Sync cursors belong to a specific folder. Pointing at a different folder
+      // must re-publish everything (op-id dedup makes that safe) and re-import
+      // peers from scratch — otherwise the new folder gets a permanently
+      // incomplete dataset.
+      const folderKey = transport.location();
+      const knownFolder = getMeta(this.store.db, 'sync_folder_key');
+      if (knownFolder !== folderKey) {
+        setMeta(this.store.db, 'last_exported_seq', '0');
+        this.store.db.prepare('DELETE FROM sync_peers').run();
+        setMeta(this.store.db, 'sync_folder_key', folderKey);
+      }
       this.state = 'idle';
       this.timer = setInterval(() => void this.cycle(), POLL_INTERVAL_MS);
       void this.cycle();
@@ -43,6 +54,11 @@ export class SyncEngine {
       this.state = 'disabled';
       this.emitStatus();
     }
+  }
+
+  /** Update the announced display name (identity can be set after boot). */
+  setUserName(name: string): void {
+    this.userName = name;
   }
 
   /** Call after any local mutation — debounced export so rapid edits batch. */
@@ -99,15 +115,19 @@ export class SyncEngine {
     const afterByDevice = new Map<string, string | null>(peers.map((p) => [p.device_id, p.last_file]));
 
     const batches = await this.transport.listPeerBatches(this.store.deviceId, afterByDevice);
+    // Batches must apply strictly in filename order per device. If one file is
+    // unreadable (e.g. still syncing down), STOP that device for this cycle —
+    // advancing past it would permanently skip its ops.
+    const stalled = new Set<string>();
     for (const b of batches) {
-      let ops;
+      if (stalled.has(b.deviceId)) continue;
       try {
-        ops = await this.transport.fetchBatch(b.deviceId, b.fileName);
+        const ops = await this.transport.fetchBatch(b.deviceId, b.fileName);
+        this.store.applyRemoteOps(ops);
       } catch {
-        // Partially synced or unreadable file — leave cursor alone, retry next cycle.
+        stalled.add(b.deviceId); // retry from this file next cycle; cursor untouched
         continue;
       }
-      this.store.applyRemoteOps(ops);
       this.store.db
         .prepare(
           `INSERT INTO sync_peers(device_id, last_file, last_seen_at) VALUES(?,?,?)

@@ -30,6 +30,7 @@ interface AppState {
   routeStack: Route[];
   dataTick: number; // bump → views refetch
   paletteOpen: boolean;
+  createOpen: boolean;
 
   init(): Promise<void>;
   navigate(r: Route): void;
@@ -38,6 +39,7 @@ interface AppState {
   refreshMeta(): Promise<void>;
   setSettings(s: AppSettings): void;
   setPalette(open: boolean): void;
+  setCreate(open: boolean): void;
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -52,6 +54,7 @@ export const useApp = create<AppState>((set, get) => ({
   routeStack: [],
   dataTick: 0,
   paletteOpen: false,
+  createOpen: false,
 
   async init() {
     const [info, settings, syncStatus] = await Promise.all([api.app.info(), api.settings.get(), api.sync.status()]);
@@ -96,6 +99,10 @@ export const useApp = create<AppState>((set, get) => ({
 
   setPalette(open) {
     set({ paletteOpen: open });
+  },
+
+  setCreate(open) {
+    set({ createOpen: open });
   },
 }));
 

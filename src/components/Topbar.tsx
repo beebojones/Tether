@@ -15,6 +15,7 @@ const ROUTE_TITLES: Record<string, string> = {
   conflicts: 'Sync Conflicts',
   settings: 'Settings',
   item: 'Item',
+  present: 'Presentation',
 };
 
 export default function Topbar() {

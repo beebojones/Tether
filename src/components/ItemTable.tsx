@@ -1,5 +1,5 @@
 // Shared item table with grouping, sorting, quick status/priority edit, row click → detail.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { WorkItem, ItemSort, Priority } from '@shared/types';
 import { STATUS_LABEL, PRIORITIES, statusesForType } from '@shared/types';
@@ -98,8 +98,10 @@ function StatusQuick({ item }: { item: WorkItem }) {
   const [open, setOpen] = useState(false);
   const statuses = statusesForType(item.type);
   return (
-    <span style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
-      <span onClick={() => setOpen(!open)} style={{ cursor: 'pointer' }}>
+    <span style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      <span onClick={() => setOpen(!open)} style={{ cursor: 'pointer' }} role="button" tabIndex={0}
+        aria-label={`Change status (${item.status})`}
+        onKeyDown={(e) => e.key === 'Enter' && setOpen(!open)}>
         <StatusBadge status={item.status} />
       </span>
       {open && (
@@ -118,8 +120,10 @@ function StatusQuick({ item }: { item: WorkItem }) {
 function PriorityQuick({ item }: { item: WorkItem }) {
   const [open, setOpen] = useState(false);
   return (
-    <span style={{ position: 'relative', width: 22, textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-      <span onClick={() => setOpen(!open)} style={{ cursor: 'pointer' }}>
+    <span style={{ position: 'relative', width: 22, textAlign: 'center' }} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      <span onClick={() => setOpen(!open)} style={{ cursor: 'pointer' }} role="button" tabIndex={0}
+        aria-label={`Change priority (${item.priority})`}
+        onKeyDown={(e) => e.key === 'Enter' && setOpen(!open)}>
         <PriorityMark priority={item.priority} />
       </span>
       {open && (
@@ -136,10 +140,20 @@ function PriorityQuick({ item }: { item: WorkItem }) {
 }
 
 function QuickMenu({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [onClose]);
   return (
     <>
       <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={onClose} />
-      <div className="quick-menu">{children}</div>
+      <div className="quick-menu" role="menu">{children}</div>
     </>
   );
 }

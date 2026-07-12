@@ -20,8 +20,9 @@ interface SeedItem {
 }
 
 export function loadSeedData(store: Store): number {
-  const existing = store.listItems({ sample: true, archived: undefined }, { field: 'createdAt', dir: 'asc' }, 1);
-  if (existing.length > 0) return 0; // already loaded
+  // Probe directly (listItems hides archived rows — archived samples must still block a reload).
+  const existing = store.db.prepare('SELECT 1 FROM items WHERE sample=1 AND deleted=0 LIMIT 1').get();
+  if (existing) return 0; // already loaded
 
   const m1 = store.upsertMilestone({ name: 'Discovery & Access', targetDate: '2026-08-15', status: 'active', sort: 1, sample: 1, description: 'Secure system access, inventory knowledge sources, confirm scope with leadership.' });
   const m2 = store.upsertMilestone({ name: 'Knowledge Pipeline MVP', targetDate: '2026-10-01', status: 'planned', sort: 2, sample: 1, description: 'Ingest, clean, and index the first knowledge domain end to end.' });

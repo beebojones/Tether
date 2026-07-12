@@ -104,21 +104,43 @@ export const SmartLink = Node.create({
     return [
       new InputRule({
         find: IDENT_INPUT,
-        handler: ({ state, range, match, chain }) => {
+        handler: ({ range, match }) => {
           const ident = match[1].toUpperCase();
-          const trailing = match[2];
-          // Only convert when the item actually exists (checked async, applied via chain later).
-          const from = range.from + match[0].indexOf(match[1]);
-          const to = from + match[1].length;
+          const expected = match[1];
+          const near = range.to;
+          const editorRef = this.editor;
+          // Conversion is async (item lookup), and the rule's `range` is unreliable for
+          // batch text input — so at apply time we re-locate the ident text in the live
+          // document (nearest occurrence to where the rule fired) before converting.
           void lookupIdent(ident).then((item) => {
-            if (!item) return;
-            chain()
+            if (!item || !editorRef || editorRef.isDestroyed) return;
+            const doc = editorRef.state.doc;
+            let best: { from: number; to: number } | null = null;
+            doc.descendants((node, pos) => {
+              if (!node.isText || !node.text) return true;
+              let idx = node.text.indexOf(expected);
+              while (idx !== -1) {
+                const from = pos + idx;
+                const to = from + expected.length;
+                // Word-boundary check so REQ-1 inside REQ-12 never converts.
+                const beforeOk = idx === 0 || /[\s([{'"“]/.test(node.text[idx - 1]);
+                const afterCh = node.text[idx + expected.length];
+                const afterOk = afterCh === undefined || /[\s.,;:!?)\]}'"”]/.test(afterCh);
+                if (beforeOk && afterOk && (!best || Math.abs(from - near) < Math.abs(best.from - near))) {
+                  best = { from, to };
+                }
+                idx = node.text.indexOf(expected, idx + 1);
+              }
+              return true;
+            });
+            if (!best) return;
+            const { from, to } = best;
+            editorRef
+              .chain()
               .deleteRange({ from, to })
               .insertContentAt(from, [{ type: 'smartLink', attrs: { ident: item.ident, itemId: item.id } }])
               .run();
           });
-          void state;
-          void trailing;
         },
       }),
     ];

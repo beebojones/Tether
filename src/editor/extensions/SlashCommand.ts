@@ -37,6 +37,8 @@ export const SlashCommand = Extension.create({
 
   addProseMirrorPlugins() {
     const menu = new SuggestionMenu();
+    // The menu element lives on document.body — remove it with the editor.
+    this.editor.on('destroy', () => menu.destroy());
     return [
       Suggestion({
         editor: this.editor,

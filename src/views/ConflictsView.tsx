@@ -46,12 +46,23 @@ export default function ConflictsView() {
       {conflicts.map((c) => {
         const item = itemsById.get(c.entityId);
         const who = users.find((u) => u.id === c.remoteActor)?.name ?? c.remoteActor;
+        // Which version is on screen right now? LWW may have applied either side —
+        // compare against the item's current field value instead of assuming.
+        const currentValue = item ? (c.field === 'title' ? item.title : item.body) : null;
+        const remoteShown = currentValue !== null && currentValue === c.remoteValue;
+        const shownBadge = (
+          <span className="badge" style={{ color: 'var(--success)', background: 'var(--success-soft)', marginLeft: 8 }}>
+            currently shown
+          </span>
+        );
         return (
           <section key={c.id} className="dash-card" style={{ marginBottom: 14 }}>
             <div className="dash-card-head" style={{ textTransform: 'none', letterSpacing: 0 }}>
               Concurrent edit on <strong>{c.field}</strong> of{' '}
               {item ? (
-                <a onClick={() => openItem(item.id)} style={{ cursor: 'pointer' }}>{item.ident} — {item.title}</a>
+                <button className="ghost" style={{ padding: '0 4px' }} onClick={() => openItem(item.id)}>
+                  {item.ident} — {item.title}
+                </button>
               ) : (
                 c.entityId
               )}
@@ -62,17 +73,17 @@ export default function ConflictsView() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: '0 14px 12px' }}>
               <div>
-                <div className="rail-label">Version kept (currently shown)</div>
+                <div className="rail-label">Your version{!remoteShown && shownBadge}</div>
                 <div className="version-pane">{renderVal(c.field, c.localValue)}</div>
               </div>
               <div>
-                <div className="rail-label">{who}'s version</div>
+                <div className="rail-label">{who}'s version{remoteShown && shownBadge}</div>
                 <div className="version-pane">{renderVal(c.field, c.remoteValue)}</div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, padding: '0 14px 14px', justifyContent: 'flex-end' }}>
-              <button onClick={() => resolve(c, 'local')}>Keep current</button>
-              <button onClick={() => resolve(c, 'remote')}>Use {who}'s version</button>
+              <button onClick={() => resolve(c, 'local')}>Keep your version</button>
+              <button onClick={() => resolve(c, 'remote')}>Keep {who}'s version</button>
               <button className="primary" onClick={() => { setMerging(c); setMergeText(renderVal(c.field, c.localValue) + '\n\n---\n\n' + renderVal(c.field, c.remoteValue)); }}>
                 Merge by hand…
               </button>

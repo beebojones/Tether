@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, KeyRound, Scale, Clock, CheckCircle2, Activity as ActivityIcon } from 'lucide-react';
 import type { WorkItem, ActivityEntry } from '@shared/types';
 import { api } from '../api';
-import { useApp, userById } from '../store';
+import { useApp } from '../store';
 import { useItems, TypeIcon, StatusBadge, fmtDate, fmtDateTime } from '../components/ui';
 import { describeActivity } from './ItemDetail';
 import ProjectHealth from '../components/ProjectHealth';
@@ -124,9 +124,6 @@ export default function Dashboard() {
           ))}
         </Card>
       </div>
-      <p className="muted" style={{ marginTop: 10, fontSize: 'var(--fs-xs)' }}>
-        {userById(users, useApp.getState().settings?.currentUser?.id ?? null) ? '' : ''}
-      </p>
     </div>
   );
 }

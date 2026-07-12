@@ -99,4 +99,8 @@ declare global {
   }
 }
 
-export const api: Bridge = window.tether;
+// Lazy binding: in the browser preview the mock bridge is installed after module
+// import, so resolve window.tether at call time rather than import time.
+export const api: Bridge = new Proxy({} as Bridge, {
+  get: (_t, prop: string) => (window.tether as unknown as Record<string, unknown>)[prop],
+});

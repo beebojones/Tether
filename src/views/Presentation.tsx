@@ -25,19 +25,21 @@ export default function Presentation({ onExit }: { onExit: () => void }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [slides.length, onExit]);
 
-  const current = slides[slide];
+  // Clamp: a data refetch can shrink the slide list while presenting.
+  const idx = Math.min(slide, slides.length - 1);
+  const current = slides[idx];
 
   return (
     <div className="present-root">
-      <div className="present-slide" key={slide}>
+      <div className="present-slide" key={idx}>
         {current}
       </div>
       <div className="present-nav">
-        <button className="ghost" onClick={() => setSlide((s) => Math.max(s - 1, 0))} disabled={slide === 0} aria-label="Previous slide">
+        <button className="ghost" onClick={() => setSlide(Math.max(idx - 1, 0))} disabled={idx === 0} aria-label="Previous slide">
           <ChevronLeft size={18} />
         </button>
-        <span className="present-counter">{slide + 1} / {slides.length}</span>
-        <button className="ghost" onClick={() => setSlide((s) => Math.min(s + 1, slides.length - 1))} disabled={slide === slides.length - 1} aria-label="Next slide">
+        <span className="present-counter">{idx + 1} / {slides.length}</span>
+        <button className="ghost" onClick={() => setSlide(Math.min(idx + 1, slides.length - 1))} disabled={idx === slides.length - 1} aria-label="Next slide">
           <ChevronRight size={18} />
         </button>
       </div>

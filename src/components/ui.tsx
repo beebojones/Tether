@@ -143,12 +143,18 @@ export function useItems(filter: ItemFilter, sort: ItemSort = { field: 'updatedA
   const key = JSON.stringify({ filter, sort, limit });
   useEffect(() => {
     let alive = true;
-    void api.items.list(filter, sort, limit).then((rows) => {
-      if (alive) {
-        setItems(rows);
-        setLoading(false);
-      }
-    });
+    api.items
+      .list(filter, sort, limit)
+      .then((rows) => {
+        if (alive) {
+          setItems(rows);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('items:list failed', err);
+        if (alive) setLoading(false);
+      });
     return () => {
       alive = false;
     };

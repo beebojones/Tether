@@ -73,21 +73,23 @@ export class SuggestionMenu {
 
   onKeyDown(event: KeyboardEvent): boolean {
     if (this.el.style.display === 'none') return false;
-    if (event.key === 'ArrowDown') {
+    // keyCode fallback: some synthetic/IME key events arrive with an empty `key`.
+    const key = event.key || { 13: 'Enter', 27: 'Escape', 38: 'ArrowUp', 40: 'ArrowDown' }[event.keyCode] || '';
+    if (key === 'ArrowDown') {
       this.selected = (this.selected + 1) % this.items.length;
       this.render();
       return true;
     }
-    if (event.key === 'ArrowUp') {
+    if (key === 'ArrowUp') {
       this.selected = (this.selected - 1 + this.items.length) % this.items.length;
       this.render();
       return true;
     }
-    if (event.key === 'Enter') {
+    if (key === 'Enter' || key === 'Tab') {
       this.items[this.selected]?.run();
       return true;
     }
-    if (event.key === 'Escape') {
+    if (key === 'Escape') {
       this.hide();
       return true;
     }

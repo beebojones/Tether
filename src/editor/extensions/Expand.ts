@@ -50,7 +50,11 @@ export const Expand = Node.create({
         e.preventDefault();
         const pos = typeof getPos === 'function' ? getPos() : null;
         if (pos == null) return;
-        editor.view.dispatch(editor.view.state.tr.setNodeAttribute(pos, 'open', !node.attrs.open));
+        // Read current state from the live doc — the `node` closure goes stale after
+        // the first update (the node view DOM is reused, this listener is not rebound).
+        const liveNode = editor.view.state.doc.nodeAt(pos);
+        const isOpen = (liveNode?.attrs.open as boolean | undefined) ?? true;
+        editor.view.dispatch(editor.view.state.tr.setNodeAttribute(pos, 'open', !isOpen));
       });
 
       const contentDOM = document.createElement('div');
@@ -75,18 +79,15 @@ export const Expand = Node.create({
     return {
       setExpand:
         () =>
-        ({ commands, state }) => {
-          const { $from } = state.selection;
-          const text = $from.parent.textContent;
-          return commands.insertContent({
+        ({ commands }) =>
+          commands.insertContent({
             type: 'expand',
             attrs: { open: true },
             content: [
-              { type: 'expandSummary', content: text ? [{ type: 'text', text: 'Section' }] : [{ type: 'text', text: 'Section' }] },
+              { type: 'expandSummary', content: [{ type: 'text', text: 'Section' }] },
               { type: 'paragraph' },
             ],
-          });
-        },
+          }),
     };
   },
 });

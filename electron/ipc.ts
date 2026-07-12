@@ -3,7 +3,7 @@
 
 import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron';
 import fs from 'node:fs';
-import path from 'node:path';
+
 import type { Store } from './db/store';
 import type { SyncEngine } from './sync/engine';
 import { FolderTransport } from './sync/transport';
@@ -57,6 +57,7 @@ export function registerIpc(deps: IpcDeps): void {
     settings.set({ currentUser: clean });
     store.actorId = clean.id;
     store.upsertUser(clean);
+    sync.setUserName(clean.name);
     afterMutation();
     return settings.get();
   });
@@ -231,10 +232,4 @@ export function registerIpc(deps: IpcDeps): void {
     return result.filePath;
   });
 
-  ipcMain.handle('export:openExternal', async (_e, target: string) => {
-    // Only allow opening paths inside our data dir (reports, backups) — not arbitrary paths.
-    const resolved = path.resolve(target);
-    if (!resolved.startsWith(path.resolve(ctx.dataDir))) throw new Error('Refusing to open a path outside the app data directory');
-    await shell.openPath(resolved);
-  });
 }

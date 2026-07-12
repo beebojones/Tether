@@ -18,10 +18,11 @@ import ActivityView from './views/ActivityView';
 import ConflictsView from './views/ConflictsView';
 import SettingsView from './views/SettingsView';
 import CommandPalette from './components/CommandPalette';
+import CreateItemDialog from './components/CreateItemDialog';
 import './styles/app.css';
 
 export default function App() {
-  const { ready, settings, route, init, setPalette, paletteOpen, back } = useApp();
+  const { ready, settings, route, init, setPalette, paletteOpen, back, createOpen, setCreate } = useApp();
 
   useEffect(() => {
     void init();
@@ -39,10 +40,20 @@ export default function App() {
         e.preventDefault();
         back();
       }
+      // C = create item (only when not typing and nothing modal is open)
+      if (
+        e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey &&
+        !isTypingTarget(e.target) &&
+        !useApp.getState().paletteOpen && !useApp.getState().createOpen &&
+        useApp.getState().route.view !== 'present'
+      ) {
+        e.preventDefault();
+        setCreate(true);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [setPalette, back]);
+  }, [setPalette, back, setCreate]);
 
   if (!ready) {
     return <div className="boot">Loading Tether…</div>;
@@ -60,8 +71,15 @@ export default function App() {
         <main className="app-content">{renderRoute(route)}</main>
       </div>
       {paletteOpen && <CommandPalette />}
+      {createOpen && <CreateItemDialog onClose={() => setCreate(false)} />}
     </div>
   );
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
 }
 
 function PresentRoute() {

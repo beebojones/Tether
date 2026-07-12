@@ -19,6 +19,8 @@ export class AttachmentManager {
   ) {}
 
   private blobPath(sha256: string): string {
+    // sha256 values can arrive from synced records — validate before any path use.
+    if (!/^[0-9a-f]{64}$/.test(sha256)) throw new Error('Invalid attachment hash');
     return path.join(this.dataDir, 'attachments', sha256.slice(0, 2), sha256);
   }
 

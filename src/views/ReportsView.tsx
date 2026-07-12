@@ -1,11 +1,12 @@
 // Leadership reporting: generate a status report from live data, review/edit, export.
 import { useMemo, useState } from 'react';
-import { FileDown, ClipboardCopy, RefreshCw, MonitorPlay } from 'lucide-react';
+import { FileDown, ClipboardCopy, RefreshCw, MonitorPlay, Sparkles } from 'lucide-react';
 import type { WorkItem } from '@shared/types';
 import { STATUS_LABEL, TYPE_LABEL } from '@shared/types';
 import { api } from '../api';
 import { useApp } from '../store';
 import { useItems } from '../components/ui';
+import { generateSnapshotHtml } from '../reports/snapshot';
 
 type ReportKind = 'leadership' | 'blockers' | 'access' | 'decisions' | 'full';
 
@@ -18,11 +19,26 @@ const REPORT_LABEL: Record<ReportKind, string> = {
 };
 
 export default function ReportsView() {
-  const { milestones, users, navigate } = useApp();
+  const { milestones, users, navigate, settings } = useApp();
   const { items } = useItems({}, { field: 'updatedAt', dir: 'desc' }, 2000);
   const [kind, setKind] = useState<ReportKind>('leadership');
   const [draft, setDraft] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [snapshotSaved, setSnapshotSaved] = useState<string | null>(null);
+
+  const exportSnapshot = async () => {
+    const html = generateSnapshotHtml({
+      items,
+      milestones,
+      users,
+      preparedBy: settings?.currentUser?.name ?? 'Tether',
+    });
+    const saved = await api.export.save(`support-ai-snapshot-${new Date().toISOString().slice(0, 10)}.html`, html);
+    if (saved) {
+      setSnapshotSaved(saved);
+      setTimeout(() => setSnapshotSaved(null), 6000);
+    }
+  };
 
   const generated = useMemo(
     () => generateReport(kind, items, milestones, users),
@@ -49,13 +65,23 @@ export default function ReportsView() {
         </select>
         <button onClick={() => setDraft(null)} title="Regenerate from current data"><RefreshCw size={13} /> Regenerate</button>
         <button onClick={() => void copy()}><ClipboardCopy size={13} /> {copied ? 'Copied!' : 'Copy for Teams/email'}</button>
-        <button className="primary" onClick={() => void api.export.save(`${kind}-report-${new Date().toISOString().slice(0, 10)}.md`, content)}>
+        <button onClick={() => void api.export.save(`${kind}-report-${new Date().toISOString().slice(0, 10)}.md`, content)}>
           <FileDown size={13} /> Save as file
+        </button>
+        <button className="primary" onClick={() => void exportSnapshot()} title="Polished standalone HTML status page — opens in any browser, prints to PDF">
+          <Sparkles size={13} /> Leadership snapshot
         </button>
       </div>
 
+      {snapshotSaved && (
+        <div className="toast" style={{ position: 'static', marginBottom: 10 }}>
+          Snapshot saved: <span className="mono">{snapshotSaved}</span> — open it in a browser, share it, or print to PDF.
+        </div>
+      )}
+
       <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 12 }}>
         Generated from current project data. Edit below before exporting — your edits are kept until you regenerate.
+        “Leadership snapshot” exports a polished standalone HTML status page instead.
       </p>
 
       <textarea
@@ -171,17 +197,13 @@ function generateReport(
     }
   }
 
-  if (kind === 'blockers' && blockers.length + blockedWork.length + risks.length === 0) {
-    sections.push(`# Support AI — Blockers & risks\n*${today}*\n\nNo active blockers or open risks. 🎉`);
-  }
-  if (kind === 'access' && !sections.length) {
-    sections.push(`# Support AI — Access needs\n*${today}*\n\nNo pending access requests.`);
+  if (kind === 'blockers') {
+    if (blockers.length + blockedWork.length + risks.length === 0) sections.push('\nNo active blockers or open risks. 🎉');
+    sections.unshift(`# Support AI — Blockers & risks\n*${today}*\n`);
   }
   if (kind === 'access') {
+    if (accessOpen.length === 0) sections.push('\nNo pending access requests.');
     sections.unshift(`# Support AI — Access needs\n*${today}*\n`);
-  }
-  if (kind === 'blockers') {
-    sections.unshift(`# Support AI — Blockers & risks\n*${today}*\n`);
   }
   if (kind === 'decisions') {
     sections.unshift(`# Support AI — Decision summary\n*${today}*\n`);

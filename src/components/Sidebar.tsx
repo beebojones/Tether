@@ -6,7 +6,6 @@ import {
 import { useApp } from '../store';
 import { api } from '../api';
 import { Avatar } from './ui';
-import CreateItemDialog from './CreateItemDialog';
 import type { Route } from '../store';
 
 const NAV: { section: string; entries: { label: string; icon: typeof LayoutDashboard; route: Route }[] }[] = [
@@ -38,9 +37,8 @@ const NAV: { section: string; entries: { label: string; icon: typeof LayoutDashb
 ];
 
 export default function Sidebar() {
-  const { route, navigate, settings, syncStatus } = useApp();
+  const { route, navigate, settings, syncStatus, setCreate } = useApp();
   const dataTick = useApp((s) => s.dataTick);
-  const [showCreate, setShowCreate] = useState(false);
   const [conflictCount, setConflictCount] = useState(0);
 
   useEffect(() => {
@@ -63,7 +61,7 @@ export default function Sidebar() {
       </div>
 
       <div style={{ padding: '2px 12px 0' }}>
-        <button className="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowCreate(true)}>
+        <button className="primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setCreate(true)}>
           <Plus size={14} /> New item
           <kbd style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.16)', border: 'none', color: '#fff' }}>C</kbd>
         </button>
@@ -102,8 +100,6 @@ export default function Sidebar() {
           <div className="r">{syncStatus?.folder ? 'Shared project' : 'Local only'}</div>
         </div>
       </div>
-
-      {showCreate && <CreateItemDialog onClose={() => setShowCreate(false)} />}
     </aside>
   );
 }

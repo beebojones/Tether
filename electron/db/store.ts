@@ -28,6 +28,7 @@ import type {
   SyncConflict,
 } from '../../shared/types';
 import { IDENT_PREFIX, statusesForType, TERMINAL_STATUSES } from '../../shared/types';
+import { docToText } from '../../shared/doc';
 
 const CONFLICT_SURFACED_FIELDS = new Set(['title', 'body']);
 
@@ -331,8 +332,8 @@ export class Store {
   }
 
   archiveItem(id: string, archived: boolean): void {
+    // updateItem already writes the activity entry for the archived-field change.
     this.updateItem(id, { archived: archived ? 1 : 0 } as Partial<WorkItem>);
-    this.logActivity(id, archived ? 'archived' : 'restored');
   }
 
   deleteItem(id: string): void {
@@ -676,13 +677,19 @@ export class Store {
       id, name: v.name, config: v.config, pinned: v.pinned ?? 0,
       createdBy: this.actorId, createdAt: this.now(),
     };
-    this.db
-      .prepare(
-        `INSERT INTO saved_views(id, name, config, pinned, created_by, created_at, deleted) VALUES(?,?,?,?,?,?,0)
-         ON CONFLICT(id) DO UPDATE SET name=?, config=?, pinned=?, deleted=0`,
-      )
-      .run(id, rec.name, JSON.stringify(rec.config), rec.pinned, rec.createdBy, rec.createdAt,
-           rec.name, JSON.stringify(rec.config), rec.pinned);
+    const existing = this.db.prepare('SELECT 1 FROM saved_views WHERE id=?').get(id);
+    const tx = this.db.transaction(() => {
+      this.db
+        .prepare(
+          `INSERT INTO saved_views(id, name, config, pinned, created_by, created_at, deleted) VALUES(?,?,?,?,?,?,0)
+           ON CONFLICT(id) DO UPDATE SET name=?, config=?, pinned=?, deleted=0`,
+        )
+        .run(id, rec.name, JSON.stringify(rec.config), rec.pinned, rec.createdBy, rec.createdAt,
+             rec.name, JSON.stringify(rec.config), rec.pinned);
+      if (!existing) this.localCreate('saved_view', id, { ...rec });
+      else this.localSet('saved_view', id, { name: rec.name, config: rec.config, pinned: rec.pinned });
+    });
+    tx();
     return rec;
   }
 
@@ -696,7 +703,11 @@ export class Store {
   }
 
   deleteView(id: string): void {
-    this.db.prepare('UPDATE saved_views SET deleted=1 WHERE id=?').run(id);
+    const tx = this.db.transaction(() => {
+      this.db.prepare('UPDATE saved_views SET deleted=1 WHERE id=?').run(id);
+      this.localSet('saved_view', id, { deleted: 1 });
+    });
+    tx();
   }
 
   // ---------- activity ----------
@@ -722,7 +733,13 @@ export class Store {
         if (dup) continue;
         this.witnessLamport(op.lamport);
         this.appendOp(op);
-        this.applyRemoteOp(op);
+        try {
+          this.applyRemoteOp(op);
+        } catch (err) {
+          // Quarantine a poison op instead of wedging the whole import: it is already
+          // recorded in the oplog (so it won't retry forever) and logged for diagnosis.
+          console.error(`[sync] failed to apply op ${op.opId} (${op.entity}/${op.action}):`, err);
+        }
         applied++;
       }
     });
@@ -793,7 +810,8 @@ export class Store {
         this.insertItemRow(item);
       }
       this.witnessIdent(item.type, item.ident);
-      for (const f of Object.keys(record)) this.setFieldClock('item', item.id, f, op.lamport, op.deviceId);
+      for (const f of Object.keys(record)) this.setFieldClockIfNewer('item', item.id, f, op.lamport, op.deviceId);
+      this.replayPendingOps(op.entity, op.entityId);
       return;
     }
 
@@ -843,10 +861,53 @@ export class Store {
       },
     };
     inserters[op.entity]?.();
-    for (const f of Object.keys(record)) this.setFieldClock(op.entity, op.entityId, f, op.lamport, op.deviceId);
+    for (const f of Object.keys(record)) this.setFieldClockIfNewer(op.entity, op.entityId, f, op.lamport, op.deviceId);
+    this.replayPendingOps(op.entity, op.entityId);
+  }
+
+  /** Set a field clock only if the incoming write is newer — creates must never
+      regress clocks stamped by buffered/earlier-arriving sets. */
+  private setFieldClockIfNewer(entity: string, entityId: string, field: string, lamport: number, deviceId: string): void {
+    const cur = this.fieldClock(entity, entityId, field);
+    if (cur && (cur.lamport > lamport || (cur.lamport === lamport && cur.deviceId > deviceId))) return;
+    this.setFieldClock(entity, entityId, field, lamport, deviceId);
+  }
+
+  /** Buffer an op that arrived before its target's create (3+ device reordering). */
+  private bufferPendingOp(op: Op): void {
+    this.db
+      .prepare(
+        `INSERT OR IGNORE INTO pending_ops(op_id, device_id, actor_id, lamport, at, entity, entity_id, action, payload)
+         VALUES(?,?,?,?,?,?,?,?,?)`,
+      )
+      .run(op.opId, op.deviceId, op.actorId, op.lamport, op.at, op.entity, op.entityId, op.action, JSON.stringify(op.payload));
+  }
+
+  /** Replay buffered sets/deletes for an entity once its create has landed. */
+  private replayPendingOps(entity: Op['entity'], entityId: string): void {
+    const rows = this.db
+      .prepare('SELECT * FROM pending_ops WHERE entity=? AND entity_id=? ORDER BY lamport, device_id')
+      .all(entity, entityId) as Record<string, unknown>[];
+    if (rows.length === 0) return;
+    this.db.prepare('DELETE FROM pending_ops WHERE entity=? AND entity_id=?').run(entity, entityId);
+    for (const r of rows) {
+      this.applyRemoteOp({
+        opId: String(r.op_id), deviceId: String(r.device_id), actorId: String(r.actor_id),
+        lamport: Number(r.lamport), at: String(r.at), entity: r.entity as Op['entity'],
+        entityId: String(r.entity_id), action: r.action as Op['action'],
+        payload: JSON.parse(String(r.payload)) as Record<string, unknown>,
+      });
+    }
   }
 
   private applyRemoteSet(op: Op): void {
+    // Target row may not exist yet (ops from a third device can arrive before the
+    // originating device's create) — buffer and replay after the create.
+    const rowExists = this.db.prepare(`SELECT 1 FROM ${this.tableFor(op.entity)} WHERE id=?`).get(op.entityId);
+    if (!rowExists) {
+      this.bufferPendingOp(op);
+      return;
+    }
     const fields = (op.payload.fields ?? {}) as Record<string, unknown>;
     const basedOn = (op.payload.basedOn ?? {}) as Record<string, { lamport: number; deviceId: string } | null>;
     const winning: Record<string, unknown> = {};
@@ -954,6 +1015,13 @@ export class Store {
 
   private applyRemoteDelete(op: Op): void {
     const table = this.tableFor(op.entity);
+    const rowExists = this.db.prepare(`SELECT 1 FROM ${table} WHERE id=?`).get(op.entityId);
+    if (!rowExists) {
+      // Delete arrived before the create (3+ device reordering) — buffer it so the
+      // create's replay applies it instead of resurrecting the item.
+      this.bufferPendingOp(op);
+      return;
+    }
     this.db.prepare(`UPDATE ${table} SET deleted=1 WHERE id=?`).run(op.entityId);
     this.setFieldClock(op.entity, op.entityId, 'deleted', op.lamport, op.deviceId);
   }
@@ -981,8 +1049,12 @@ export class Store {
         resolution === 'merged' ? (mergedValue ?? '') : resolution === 'local' ? String(row.local_value) : String(row.remote_value);
       if (String(row.entity) === 'item') {
         const field = String(row.field);
-        this.applyItemFields(String(row.entity_id), { [field]: value, updatedAt: this.now(), updatedBy: this.actorId });
-        this.localSet('item', String(row.entity_id), { [field]: value, updatedAt: this.now(), updatedBy: this.actorId });
+        const stamp = this.now();
+        const fields: Record<string, unknown> = { [field]: value, updatedAt: stamp, updatedBy: this.actorId };
+        // Resolving a body conflict must also refresh the search-text projection.
+        if (field === 'body') fields.bodyText = docToText(value);
+        this.applyItemFields(String(row.entity_id), fields);
+        this.localSet('item', String(row.entity_id), fields);
       }
       this.db.prepare('UPDATE sync_conflicts SET resolved_at=?, resolution=? WHERE id=?').run(this.now(), resolution, id);
     });

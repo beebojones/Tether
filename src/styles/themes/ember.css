@@ -1,0 +1,42 @@
+/* Theme variant "Graphite & Ember" — warm charcoal surfaces, amber accent.
+   Preview-only override of the Meridian tokens. */
+:root {
+  --bg-app: #131110;
+  --bg-sidebar: #171412;
+  --bg-panel: #1c1917;
+  --bg-raised: #241f1c;
+  --bg-hover: #2a2420;
+  --bg-active: #322a25;
+  --bg-input: #171311;
+  --bg-overlay: rgba(14, 11, 9, 0.74);
+
+  --border-subtle: #292320;
+  --border-default: #352d28;
+  --border-strong: #4a3e36;
+  --border-focus: #f2a64c;
+
+  --text-primary: #f2ece4;
+  --text-secondary: #c9bcae;
+  --text-muted: #92846f;
+  --text-faint: #6a5d4c;
+
+  --accent: #f2a64c;
+  --accent-strong: #f7b96b;
+  --accent-soft: rgba(242, 166, 76, 0.14);
+  --accent-border: rgba(242, 166, 76, 0.38);
+
+  --st-progress: #f2a64c;
+  --pr-medium: #f2a64c;
+  --info-soft: rgba(242, 166, 76, 0.1);
+
+  --shadow-glow: 0 0 0 1px var(--accent-border), 0 4px 24px rgba(242, 166, 76, 0.16);
+}
+
+/* Brand gradient shifts warm */
+.sidebar-brand .logo, .ob-logo, .present-logo {
+  background: linear-gradient(135deg, #f2a64c 0%, #e2634c 100%) !important;
+}
+.progress-fill, .pm-fill {
+  background: linear-gradient(90deg, #f2a64c, #e2634c) !important;
+}
+button.primary { color: #241505 !important; }

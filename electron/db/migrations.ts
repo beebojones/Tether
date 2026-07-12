@@ -237,4 +237,25 @@ CREATE TRIGGER items_fts_au AFTER UPDATE ON items BEGIN
 END;
 `,
   },
+  {
+    version: 2,
+    name: 'pending-ops-buffer',
+    sql: `
+-- Ops that arrived before the create of their target entity (possible with 3+
+-- devices, since ordering is only guaranteed per device). Buffered here and
+-- replayed once the create lands.
+CREATE TABLE pending_ops (
+  op_id TEXT PRIMARY KEY,
+  device_id TEXT NOT NULL,
+  actor_id TEXT NOT NULL,
+  lamport INTEGER NOT NULL,
+  at TEXT NOT NULL,
+  entity TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  payload TEXT NOT NULL
+);
+CREATE INDEX idx_pending_entity ON pending_ops(entity, entity_id);
+`,
+  },
 ];
