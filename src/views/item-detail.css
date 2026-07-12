@@ -1,0 +1,150 @@
+.detail { display: flex; min-height: 100%; }
+
+.detail-main { flex: 1; min-width: 0; padding: 20px 28px 60px; max-width: 900px; }
+
+.detail-head { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+
+.detail-title {
+  width: 100%;
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  margin-left: -8px;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+.detail-title:hover { border-color: var(--border-subtle); }
+.detail-title:focus { border-color: var(--border-focus); outline: none; background: var(--bg-input); }
+
+.body-editor { position: relative; margin: 8px 0 4px; }
+.body-editor textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.55;
+  font-size: var(--fs-md);
+  background: transparent;
+  border-color: transparent;
+  padding: 8px;
+  margin-left: -8px;
+}
+.body-editor textarea:hover { border-color: var(--border-subtle); }
+.body-editor textarea:focus { background: var(--bg-input); border-color: var(--border-focus); }
+
+.save-state {
+  position: absolute;
+  right: 4px;
+  bottom: 8px;
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+.save-state.saving { color: var(--warning); }
+.save-state.dirty { color: var(--warning); }
+.save-state.saved { color: var(--text-faint); }
+
+.detail-section { margin-top: 26px; }
+.detail-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: var(--fs-xs);
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  margin-bottom: 5px;
+  cursor: pointer;
+  background: var(--bg-panel);
+  transition: border-color var(--t-fast) var(--ease);
+}
+.link-row:hover { border-color: var(--border-strong); }
+.link-kind {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  min-width: 92px;
+  white-space: nowrap;
+}
+
+.detail-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 12px; }
+.detail-tabs button {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 7px 12px;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+.detail-tabs button:hover { color: var(--text-primary); background: transparent; }
+.detail-tabs button.active { color: var(--text-primary); border-bottom-color: var(--accent); font-weight: 600; }
+
+.comment { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }
+.comment-head { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); margin-bottom: 3px; }
+.comment-head .muted { font-size: var(--fs-xs); }
+.comment-body { font-size: var(--fs-md); line-height: 1.5; white-space: pre-wrap; user-select: text; }
+
+.activity-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.version-pane {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 10px;
+  font-size: var(--fs-sm);
+  white-space: pre-wrap;
+  max-height: 320px;
+  overflow-y: auto;
+  user-select: text;
+}
+
+/* Right rail */
+.detail-rail {
+  width: 280px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-sidebar);
+  padding: 18px 16px 40px;
+  overflow-y: auto;
+}
+
+.rail-field { margin-bottom: 14px; }
+.rail-field select, .rail-field input[type='date'], .rail-field input[type='text'] { width: 100%; }
+.rail-label {
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+}
+
+.rail-meta {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

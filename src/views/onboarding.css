@@ -1,0 +1,44 @@
+.onboarding {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(110, 139, 255, 0.09), transparent),
+    radial-gradient(900px 500px at 90% 110%, rgba(155, 110, 242, 0.08), transparent),
+    var(--bg-app);
+}
+
+.ob-card {
+  width: 480px;
+  max-width: 92vw;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 36px;
+}
+
+.ob-logo {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, #9b6ef2 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 20px; color: #fff;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-glow);
+}
+
+.ob-card h1 { font-size: var(--fs-2xl); margin-bottom: 6px; }
+
+.ob-presets { display: flex; gap: 8px; margin-bottom: 8px; }
+
+.ob-check {
+  display: flex; align-items: center; gap: 8px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  margin: 10px 0 4px;
+}
+
+.ob-go { width: 100%; justify-content: center; margin-top: 18px; padding: 9px; font-size: var(--fs-md); }

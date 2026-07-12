@@ -1,0 +1,55 @@
+.board {
+  display: flex;
+  gap: 12px;
+  padding: var(--sp-5);
+  overflow-x: auto;
+  height: 100%;
+  align-items: flex-start;
+}
+
+.board-col {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  transition: border-color var(--t-fast) var(--ease);
+}
+.board-col.drag-over { border-color: var(--accent); }
+
+.board-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-weight: 650;
+  font-size: var(--fs-sm);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.board-col-cards {
+  padding: 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 60px;
+}
+
+.board-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.board-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+.board-card:active { cursor: grabbing; }
+
+.board-card-top { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.board-card-title { font-size: var(--fs-sm); line-height: 1.4; margin-bottom: 8px; }
+.board-card-bottom { display: flex; align-items: center; gap: 8px; }
