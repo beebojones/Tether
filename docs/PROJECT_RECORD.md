@@ -118,15 +118,21 @@ so a direction swap is a token change.
 - Seeded Support AI sample project (23 items, linked, SAMPLE-flagged, one-click remove)
 - 9 passing tests incl. two-device convergence, conflicts, ident collisions, offline queue
 
-### In progress
-- Rich text editor (TipTap): slash menu, smart links, tables, callouts — currently a
-  clean autosaving plain editor stores the same doc format the rich editor will read
+### Done (continued)
+- Rich text editor (TipTap): full toolbar + bubble menu + slash menu, @mentions,
+  smart links (REQ-1 → live chip), tables w/ row/col controls, 5 callout types,
+  expandable sections, task lists, code blocks with a language dropdown,
+  hyperlinks (add/edit/remove, Ctrl+K), text + highlight color pickers, image
+  insert / drag-drop / paste (base64, syncs in the doc), find-in-document (Ctrl+F),
+  full-screen editing, autosave with visible save state, version snapshot/compare/restore
+- Meeting-note text→item conversion flow (convert selection to task/decision/risk/etc.)
+- Presentation mode; leadership snapshot + deck + PDF exports
+- Packaging (electron-builder NSIS, arm64 + x64) + update workflow docs
 
 ### Not started
-- Meeting-note text→item conversion flow
-- Presentation mode
-- Packaging (electron-builder NSIS) + update workflow docs
-- Saved views UI, relationship graph view, PDF/DOCX export renderers
+- Relationship graph view (nice-to-have)
+- DOCX/PPTX export renderers (HTML/PDF/deck exist)
+- Image resize handles in the editor (images insert + display responsively today)
 
 ## Known limitations
 - Body editor is plain-text v1 (doc format already rich-compatible)

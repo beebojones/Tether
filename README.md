@@ -112,7 +112,9 @@ for the fuller design.
 - `Ctrl+K` — search / command palette
 - `Alt+←` — back
 - In the editor: `/` block menu, `@` mention, type `REQ-1 ` to smart-link an item,
-  markdown shortcuts (`# `, `- `, `1. `, `> `, `` ``` ``), `Ctrl+B/I/U`
+  `Ctrl+K` add/edit link, `Ctrl+F` find in document, markdown shortcuts
+  (`# `, `- `, `1. `, `> `, `` ``` ``), `Ctrl+B/I/U`. Toolbar adds text/highlight
+  color, image insert (also drag-drop or paste), code-block language, and full screen.
 
 ## Documentation
 
