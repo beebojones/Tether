@@ -146,3 +146,13 @@ npm run dist         # NSIS installer into release/
 
 Data lives in `%APPDATA%/Tether/data/tether.db` (per user), backups in
 `data/backups/`, settings in `settings.json` alongside.
+
+## Identity decisions (ratified by John, 2026-07-12 evening)
+
+| Decision | Choice |
+|---|---|
+| Theme | **Nocturne + Horizon's ember**: violet night surfaces, violet→ember brand gradient, ember floor glow in the ambient wash |
+| Logo | **Bond** — two nodes, one taut line; white mark on violet→ember tile; `src/components/TetherMark.tsx`, icon at `build/icon.svg` → `build/icon.ico` (scripts/build-icon.mjs) |
+| Fonts | **Space Grotesk** (display) + **Inter** (UI) + **Fira Code** (mono), bundled offline under `src/assets/fonts/` (SIL OFL) |
+| App ID | **com.beebojones.tether** (confirmed) |
+| Project name | Editable setting (Settings → Project); flows into reports, deck, snapshot, presentation. "Support AI" is the first project's name, not the app's |

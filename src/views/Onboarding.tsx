@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { api } from '../api';
 import { useApp } from '../store';
+import TetherMark from '../components/TetherMark';
 import './onboarding.css';
 
 const PRESETS = [
@@ -45,7 +46,7 @@ export default function Onboarding() {
   return (
     <div className="onboarding">
       <div className="ob-card">
-        <div className="ob-logo">T</div>
+        <div className="ob-logo"><TetherMark size={26} /></div>
         <h1>Welcome to Tether</h1>
         <p className="muted">Your shared project workspace. Set up your identity to begin.</p>
 

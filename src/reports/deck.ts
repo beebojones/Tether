@@ -49,7 +49,7 @@ export function generateDeckHtml({ items, milestones, users, preparedBy, project
     title: '__TITLE__',
     body: `
       <div class="titleslide">
-        <div class="brand">T</div>
+        <div class="brand"><svg width="44" height="44" viewBox="0 0 512 512" fill="none" stroke="#fff" stroke-width="52" stroke-linecap="round" aria-hidden="true"><circle cx="168" cy="256" r="92"/><circle cx="400" cy="256" r="44"/><line x1="260" y1="256" x2="356" y2="256"/></svg></div>
         <h1>${esc(projectName)}</h1>
         <p class="sub">Project status · ${esc(today)}</p>
         <p class="byline">Prepared by ${esc(preparedBy)} · Live data from Tether</p>
