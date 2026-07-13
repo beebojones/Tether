@@ -6,14 +6,19 @@ import type { WorkItem } from '@shared/types';
 import { STATUS_LABEL } from '@shared/types';
 import { useApp } from '../store';
 import { useItems, TypeIcon, fmtDate } from '../components/ui';
+import TetherMark from '../components/TetherMark';
 import './presentation.css';
 
 export default function Presentation({ onExit }: { onExit: () => void }) {
-  const { milestones, users } = useApp();
+  const { milestones, users, settings } = useApp();
   const { items } = useItems({}, { field: 'updatedAt', dir: 'desc' }, 2000);
   const [slide, setSlide] = useState(0);
+  const projectName = settings?.projectName?.trim() || 'Project';
 
-  const slides = useMemo(() => buildSlides(items, milestones, users), [items, milestones, users]);
+  const slides = useMemo(
+    () => buildSlides(items, milestones, users, projectName),
+    [items, milestones, users, projectName],
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -52,6 +57,7 @@ function buildSlides(
   items: WorkItem[],
   milestones: { id: string; name: string; targetDate: string | null }[],
   users: { id: string; name: string }[],
+  projectName: string,
 ): React.ReactNode[] {
   const owner = (id: string | null) => users.find((u) => u.id === id)?.name ?? 'Unassigned';
   const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
@@ -82,8 +88,8 @@ function buildSlides(
 
   slides.push(
     <div className="present-title">
-      <div className="present-logo">T</div>
-      <h1>Support AI</h1>
+      <div className="present-logo"><TetherMark size={44} /></div>
+      <h1>{projectName}</h1>
       <p>Project status walkthrough</p>
       <p className="p-date">{new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
     </div>,

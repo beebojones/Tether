@@ -27,8 +27,11 @@ export default function ReportsView() {
   const [copied, setCopied] = useState(false);
   const [snapshotSaved, setSnapshotSaved] = useState<string | null>(null);
 
+  const projectName = settings?.projectName?.trim() || 'Project';
+  const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'project';
+
   const snapshotHtml = () =>
-    generateSnapshotHtml({ items, milestones, users, preparedBy: settings?.currentUser?.name ?? 'Tether' });
+    generateSnapshotHtml({ items, milestones, users, preparedBy: settings?.currentUser?.name ?? 'Tether', projectName });
 
   const flashSaved = (saved: string | null) => {
     if (!saved) return;
@@ -37,19 +40,19 @@ export default function ReportsView() {
   };
 
   const stamp = () => new Date().toISOString().slice(0, 10);
-  const exportSnapshot = async () => flashSaved(await api.export.save(`support-ai-snapshot-${stamp()}.html`, snapshotHtml()));
-  const exportPdf = async () => flashSaved(await api.export.pdf(`support-ai-snapshot-${stamp()}.pdf`, snapshotHtml()));
+  const exportSnapshot = async () => flashSaved(await api.export.save(`${slug}-snapshot-${stamp()}.html`, snapshotHtml()));
+  const exportPdf = async () => flashSaved(await api.export.pdf(`${slug}-snapshot-${stamp()}.pdf`, snapshotHtml()));
   const exportDeck = async () =>
     flashSaved(
       await api.export.save(
-        `support-ai-deck-${stamp()}.html`,
-        generateDeckHtml({ items, milestones, users, preparedBy: settings?.currentUser?.name ?? 'Tether' }),
+        `${slug}-deck-${stamp()}.html`,
+        generateDeckHtml({ items, milestones, users, preparedBy: settings?.currentUser?.name ?? 'Tether', projectName }),
       ),
     );
 
   const generated = useMemo(
-    () => generateReport(kind, items, milestones, users),
-    [kind, items, milestones, users],
+    () => generateReport(kind, items, milestones, users, projectName),
+    [kind, items, milestones, users, projectName],
   );
   const content = draft ?? generated;
 
@@ -112,6 +115,7 @@ function generateReport(
   items: WorkItem[],
   milestones: { id: string; name: string; targetDate: string | null }[],
   users: { id: string; name: string }[],
+  projectName: string,
 ): string {
   const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   const owner = (id: string | null) => users.find((u) => u.id === id)?.name ?? 'Unassigned';
@@ -132,7 +136,7 @@ function generateReport(
   const h = (t: string) => `\n## ${t}\n`;
 
   if (kind === 'leadership' || kind === 'full') {
-    sections.push(`# Support AI — ${REPORT_LABEL[kind]}\n*${today}*\n`);
+    sections.push(`# ${projectName} — ${REPORT_LABEL[kind]}\n*${today}*\n`);
     sections.push(h('Summary'));
     sections.push(
       `- ${active.length} work item${active.length === 1 ? '' : 's'} in progress` +
@@ -212,14 +216,14 @@ function generateReport(
 
   if (kind === 'blockers') {
     if (blockers.length + blockedWork.length + risks.length === 0) sections.push('\nNo active blockers or open risks. 🎉');
-    sections.unshift(`# Support AI — Blockers & risks\n*${today}*\n`);
+    sections.unshift(`# ${projectName} — Blockers & risks\n*${today}*\n`);
   }
   if (kind === 'access') {
     if (accessOpen.length === 0) sections.push('\nNo pending access requests.');
-    sections.unshift(`# Support AI — Access needs\n*${today}*\n`);
+    sections.unshift(`# ${projectName} — Access needs\n*${today}*\n`);
   }
   if (kind === 'decisions') {
-    sections.unshift(`# Support AI — Decision summary\n*${today}*\n`);
+    sections.unshift(`# ${projectName} — Decision summary\n*${today}*\n`);
   }
 
   if (kind === 'full') {

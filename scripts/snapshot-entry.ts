@@ -39,5 +39,5 @@ const items: WorkItem[] = [
   mk({ type: 'risk', ident: 'RISK-2', title: 'Access approvals slip and stall the pipeline build', status: 'mitigating', priority: 'high', ownerId: 'mark', extra: { mitigation: 'Weekly follow-ups; leadership escalation path agreed' } }),
   mk({ type: 'task', ident: 'TASK-3', title: 'Draft answer-quality evaluation rubric', status: 'todo', ownerId: 'mark', dueDate: days(3).slice(0, 10), milestoneId: 'm2' }),
 ];
-export const html = generateSnapshotHtml({ items, milestones, users, preparedBy: 'John Crouch' });
-export const deckHtml = generateDeckHtml({ items, milestones, users, preparedBy: 'John Crouch' });
+export const html = generateSnapshotHtml({ items, milestones, users, preparedBy: 'John Crouch', projectName: 'Support AI' });
+export const deckHtml = generateDeckHtml({ items, milestones, users, preparedBy: 'John Crouch', projectName: 'Support AI' });

@@ -6,6 +6,7 @@ import {
 import { useApp } from '../store';
 import { api } from '../api';
 import { Avatar } from './ui';
+import TetherMark from './TetherMark';
 import type { Route } from '../store';
 
 const NAV: { section: string; entries: { label: string; icon: typeof LayoutDashboard; route: Route }[] }[] = [
@@ -53,7 +54,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="logo">T</div>
+        <div className="logo"><TetherMark size={16} /></div>
         <div>
           <div className="name">Tether</div>
           <div className="sub">Project Workspace</div>

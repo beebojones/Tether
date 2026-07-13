@@ -13,6 +13,7 @@ export interface AppSettings {
   currentUser: UserIdentity | null;
   syncFolder: string | null; // OneDrive/SharePoint-synced directory; null = local-only mode
   density: 'compact' | 'comfortable';
+  projectName: string; // display name used by reports/exports/presentation — editable content
   seedLoaded: boolean;
 }
 
@@ -20,6 +21,7 @@ const DEFAULTS: AppSettings = {
   currentUser: null,
   syncFolder: null,
   density: 'compact',
+  projectName: 'Support AI',
   seedLoaded: false,
 };
 

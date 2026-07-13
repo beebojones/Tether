@@ -32,9 +32,10 @@
   --accent-soft: rgba(139, 123, 255, 0.15);
   --accent-border: rgba(139, 123, 255, 0.4);
 
-  /* Brand gradient endpoints (logo, progress fills, hero moments) */
+  /* Brand gradient endpoints (logo, progress fills, hero moments).
+     Nocturne violet into Horizon's ember — John's hybrid (2026-07-12). */
   --brand-from: #8b7bff;
-  --brand-to: #e264b4;
+  --brand-to: #f28c4c;
 
   /* Status */
   --st-backlog: #7d7599;
@@ -61,9 +62,10 @@
   --warning-soft: rgba(242, 176, 76, 0.12);
   --info-soft: rgba(139, 123, 255, 0.1);
 
-  /* Typography */
-  --font-ui: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
+  /* Typography (bundled: Inter UI, Space Grotesk display, Fira Code mono) */
+  --font-ui: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', 'Segoe UI', sans-serif;
+  --font-mono: 'Fira Code', 'Cascadia Code', 'Consolas', ui-monospace, monospace;
   --fs-xs: 11px;
   --fs-sm: 12.5px;
   --fs-md: 13.5px;

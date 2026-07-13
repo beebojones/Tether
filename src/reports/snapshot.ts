@@ -9,12 +9,13 @@ export interface SnapshotData {
   milestones: Milestone[];
   users: User[];
   preparedBy: string;
+  projectName: string;
 }
 
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export function generateSnapshotHtml({ items, milestones, users, preparedBy }: SnapshotData): string {
+export function generateSnapshotHtml({ items, milestones, users, preparedBy, projectName }: SnapshotData): string {
   const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   const owner = (id: string | null) => users.find((u) => u.id === id)?.name ?? 'Unassigned';
   const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
@@ -71,7 +72,7 @@ export function generateSnapshotHtml({ items, milestones, users, preparedBy }: S
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Support AI — Status Snapshot — ${esc(today)}</title>
+<title>${esc(projectName)} — Status Snapshot — ${esc(today)}</title>
 <style>
   :root { color-scheme: light; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -135,7 +136,7 @@ export function generateSnapshotHtml({ items, milestones, users, preparedBy }: S
 <body>
 <div class="page">
   <header>
-    <div class="kicker">Support AI Initiative</div>
+    <div class="kicker">${esc(projectName)}</div>
     <h1>Project Status Snapshot<span class="health" style="background:${health.color}">${health.label}</span></h1>
     <div class="meta">${esc(today)} · Prepared by ${esc(preparedBy)} · Generated from live project data in Tether</div>
   </header>
@@ -164,7 +165,7 @@ export function generateSnapshotHtml({ items, milestones, users, preparedBy }: S
     `<div class="note">Due ${esc(i.dueDate ?? '')}</div>`)}
 
   <footer>
-    <span>Support AI · Tether workspace</span>
+    <span>${esc(projectName)} · Tether workspace</span>
     <span>Every item above is tracked and linked — ask for detail on any ID.</span>
   </footer>
 </div>

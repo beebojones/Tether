@@ -9,12 +9,13 @@ export interface DeckData {
   milestones: Milestone[];
   users: User[];
   preparedBy: string;
+  projectName: string;
 }
 
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export function generateDeckHtml({ items, milestones, users, preparedBy }: DeckData): string {
+export function generateDeckHtml({ items, milestones, users, preparedBy, projectName }: DeckData): string {
   const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   const owner = (id: string | null) => users.find((u) => u.id === id)?.name ?? 'Unassigned';
   const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
@@ -49,7 +50,7 @@ export function generateDeckHtml({ items, milestones, users, preparedBy }: DeckD
     body: `
       <div class="titleslide">
         <div class="brand">T</div>
-        <h1>Support AI</h1>
+        <h1>${esc(projectName)}</h1>
         <p class="sub">Project status · ${esc(today)}</p>
         <p class="byline">Prepared by ${esc(preparedBy)} · Live data from Tether</p>
       </div>`,
@@ -142,7 +143,7 @@ export function generateDeckHtml({ items, milestones, users, preparedBy }: DeckD
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Support AI — Status Deck — ${esc(today)}</title>
+<title>${esc(projectName)} — Status Deck — ${esc(today)}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; }

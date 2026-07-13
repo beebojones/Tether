@@ -45,6 +45,26 @@ export default function SettingsView() {
         </p>
       </Section>
 
+      <Section title="Project">
+        <div className="form-row" style={{ maxWidth: 320 }}>
+          <label htmlFor="set-project">Project name</label>
+          <input
+            id="set-project"
+            type="text"
+            defaultValue={settings?.projectName ?? ''}
+            placeholder="e.g. Support AI"
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v && v !== settings?.projectName) void api.settings.set({ projectName: v }).then(setSettings);
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+          />
+          <p className="muted" style={{ fontSize: 'var(--fs-xs)' }}>
+            Used as the title in reports, the slide deck, and presentation mode.
+          </p>
+        </div>
+      </Section>
+
       <Section title="Appearance">
         <div className="form-row" style={{ maxWidth: 320 }}>
           <label htmlFor="set-density">Density</label>

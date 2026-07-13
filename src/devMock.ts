@@ -134,6 +134,7 @@ const conflicts: SyncConflict[] = [
 const versions: ItemVersion[] = [];
 const savedViews: SavedView[] = [];
 let mockDensity: 'compact' | 'comfortable' = 'compact';
+let mockProjectName = 'Support AI';
 const listeners = new Set<(w: { entity: string; entityId: string }) => void>();
 const emit = () => listeners.forEach((l) => l({ entity: '*', entityId: '*' }));
 
@@ -193,10 +194,12 @@ export function installDevMock(): void {
         currentUser: { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF' },
         syncFolder: syncStatus.folder,
         density: mockDensity,
+        projectName: mockProjectName,
         seedLoaded: true,
       }),
-      set: async (patch: { density?: 'compact' | 'comfortable' }) => {
+      set: async (patch: { density?: 'compact' | 'comfortable'; projectName?: string }) => {
         if (patch.density) mockDensity = patch.density;
+        if (patch.projectName !== undefined) mockProjectName = patch.projectName;
         return bridge.settings.get();
       },
       setUser: async () => bridge.settings.get(),

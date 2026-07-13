@@ -23,6 +23,7 @@ export interface AppSettings {
   currentUser: UserIdentity | null;
   syncFolder: string | null;
   density: 'compact' | 'comfortable';
+  projectName: string;
   seedLoaded: boolean;
 }
 
