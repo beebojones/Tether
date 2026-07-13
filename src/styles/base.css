@@ -84,6 +84,37 @@ input::placeholder, textarea::placeholder { color: var(--text-faint); }
 select { cursor: pointer; }
 select option { background: var(--bg-raised); }
 
+/* Native checkboxes, themed to match. The editor's task-list checkboxes have their
+   own (more specific) shape styling and are unaffected. */
+input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--bg-input);
+  cursor: pointer;
+  position: relative;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+input[type='checkbox']:hover { border-color: var(--accent); }
+input[type='checkbox']:checked { background: var(--accent); border-color: var(--accent); }
+input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+input[type='checkbox']:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 1px; }
+
 a { color: var(--accent-strong); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
