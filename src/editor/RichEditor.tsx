@@ -25,12 +25,13 @@ import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered,
   ListChecks, Quote, Table as TableIcon, Minus, Undo2, Redo2, Highlighter,
   Subscript as SubIcon, Superscript as SupIcon, PanelTopClose, Info,
-  Link2, Image as ImageIcon, Baseline, Maximize2, Minimize2, Search, X, Check,
+  Link2, Image as ImageIcon, Baseline, Maximize2, Minimize2, Search, X, Check, ChevronDown,
 } from 'lucide-react';
 import { Callout, CALLOUT_KINDS } from './extensions/Callout';
 import { Expand, ExpandSummary } from './extensions/Expand';
 import { SmartLink, setSmartLinkNavigate, invalidateSmartLinkCache } from './extensions/SmartLink';
 import { SlashCommand } from './extensions/SlashCommand';
+import { ListStyles } from './extensions/ListStyles';
 import { SuggestionMenu, type MenuItem } from './SuggestionMenu';
 import { useApp } from '../store';
 import './editor.css';
@@ -77,6 +78,102 @@ async function insertImageFiles(editor: Editor, files: FileList | File[]): Promi
   }
 }
 
+// Hoisted out of the component so it isn't a new type on every render (the editor
+// re-renders on every keystroke/selection change; an inline component would remount
+// every toolbar button each time — the source of intermittent dead-click bugs).
+function B({ onClick, active, title, children }: { onClick: () => void; active?: boolean; title: string; children: React.ReactNode }) {
+  return (
+    <button type="button" className={`tb ${active ? 'active' : ''}`} title={title}
+      onMouseDown={(e) => { e.preventDefault(); onClick(); }} aria-label={title} aria-pressed={active}>
+      {children}
+    </button>
+  );
+}
+
+interface ListStyleOption { value: string; label: string; swatch?: string }
+
+/** A list toolbar button: main click toggles the list; the caret opens a menu to
+    pick a per-list style (applied to the current list, creating it if needed). */
+function ListSplitButton({ editor, icon, title, listType, styleKey, active, onToggle, options }: {
+  editor: Editor;
+  icon: React.ReactNode;
+  title: string;
+  listType: 'bulletList' | 'orderedList' | 'taskList';
+  styleKey: 'listStyle' | 'shape';
+  active: boolean;
+  onToggle: () => void;
+  options: ListStyleOption[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onEsc);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onEsc); };
+  }, [open]);
+
+  const apply = (value: string) => {
+    const chain = editor.chain().focus();
+    if (!editor.isActive(listType)) {
+      if (listType === 'bulletList') chain.toggleBulletList();
+      else if (listType === 'orderedList') chain.toggleOrderedList();
+      else chain.toggleTaskList();
+    }
+    chain.updateAttributes(listType, { [styleKey]: value }).run();
+    setOpen(false);
+  };
+  const current = editor.getAttributes(listType)[styleKey] as string | undefined;
+
+  return (
+    <div className="tb-split" ref={ref}>
+      <button type="button" className={`tb tb-split-main ${active ? 'active' : ''}`} title={title}
+        onMouseDown={(e) => { e.preventDefault(); onToggle(); }} aria-label={title} aria-pressed={active}>
+        {icon}
+      </button>
+      <button type="button" className="tb tb-split-caret" title={`${title} — choose style`}
+        onMouseDown={(e) => { e.preventDefault(); setOpen((o) => !o); }} aria-label={`${title} style options`} aria-expanded={open}>
+        <ChevronDown size={11} />
+      </button>
+      {open && (
+        <div className="tb-split-menu" role="menu">
+          {options.map((o) => (
+            <button key={o.value} type="button" role="menuitem"
+              className={`tb-split-item ${current === o.value || (!current && o === options[0]) ? 'active' : ''}`}
+              onMouseDown={(e) => { e.preventDefault(); apply(o.value); }}>
+              {o.swatch !== undefined
+                ? <span className={`ls-swatch ls-${listType} ls-${o.value}`} aria-hidden>{o.swatch}</span>
+                : <span className="ls-swatch" aria-hidden />}
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const BULLET_OPTIONS: ListStyleOption[] = [
+  { value: 'disc', label: 'Disc', swatch: '' },
+  { value: 'circle', label: 'Circle', swatch: '' },
+  { value: 'square', label: 'Square', swatch: '' },
+  { value: 'hexagon', label: 'Hexagon', swatch: '' },
+];
+const ORDERED_OPTIONS: ListStyleOption[] = [
+  { value: 'decimal', label: '1.  2.  3.' },
+  { value: 'lower-alpha', label: 'a.  b.  c.' },
+  { value: 'lower-roman', label: 'i.  ii.  iii.' },
+  { value: 'upper-alpha', label: 'A.  B.  C.' },
+  { value: 'upper-roman', label: 'I.  II.  III.' },
+];
+const TASK_OPTIONS: ListStyleOption[] = [
+  { value: 'circle', label: 'Circle', swatch: '' },
+  { value: 'square', label: 'Square', swatch: '' },
+  { value: 'hexagon', label: 'Hexagon', swatch: '' },
+];
+
 export default function RichEditor({ content, placeholder, onSave, onSelectionText, autofocus }: RichEditorProps) {
   const { users, openItem } = useApp();
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'dirty'>('saved');
@@ -117,6 +214,7 @@ export default function RichEditor({ content, placeholder, onSave, onSelectionTe
       TableCell,
       TaskList,
       TaskItem.configure({ nested: true }),
+      ListStyles,
       Image.configure({ allowBase64: true }),
       Callout,
       Expand,
@@ -290,14 +388,9 @@ export default function RichEditor({ content, placeholder, onSave, onSelectionTe
 
   if (!editor) return null;
 
-  const B = ({ onClick, active, title, children }: { onClick: () => void; active?: boolean; title: string; children: React.ReactNode }) => (
-    <button type="button" className={`tb ${active ? 'active' : ''}`} title={title}
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }} aria-label={title} aria-pressed={active}>
-      {children}
-    </button>
-  );
-
-  const curTextColor = (editor.getAttributes('textStyle').color as string | undefined) ?? '#a495ff';
+  const textColorAttr = editor.getAttributes('textStyle').color as string | undefined;
+  const curTextColor = textColorAttr ?? '#a495ff';
+  const curHighlight = (editor.getAttributes('highlight').color as string | undefined)?.slice(0, 7) || '#f2b04c';
 
   return (
     <div
@@ -347,21 +440,29 @@ export default function RichEditor({ content, placeholder, onSave, onSelectionTe
         <B title="Inline code" active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}><Code size={14} /></B>
         <B title="Link (Ctrl+K)" active={editor.isActive('link')} onClick={openLinkEditor}><Link2 size={14} /></B>
         <label className="tb tb-color" title="Text color">
-          <Baseline size={14} style={{ color: curTextColor }} />
+          <Baseline size={14} style={{ color: textColorAttr ?? 'currentColor' }} />
           <input type="color" value={curTextColor}
             onChange={(e) => editor.chain().focus().setColor(e.target.value).run()} />
         </label>
+        {textColorAttr && <B title="Clear text color" onClick={() => editor.chain().focus().unsetColor().run()}><X size={12} /></B>}
         <label className="tb tb-color" title="Highlight color" style={{ background: editor.isActive('highlight') ? 'var(--accent-soft)' : undefined }}>
           <Highlighter size={14} />
-          <input type="color" defaultValue="#f2b04c"
+          <input type="color" value={curHighlight}
             onChange={(e) => editor.chain().focus().setHighlight({ color: e.target.value + '59' }).run()} />
         </label>
+        {editor.isActive('highlight') && <B title="Clear highlight" onClick={() => editor.chain().focus().unsetHighlight().run()}><X size={12} /></B>}
         <B title="Subscript" active={editor.isActive('subscript')} onClick={() => editor.chain().focus().toggleSubscript().run()}><SubIcon size={14} /></B>
         <B title="Superscript" active={editor.isActive('superscript')} onClick={() => editor.chain().focus().toggleSuperscript().run()}><SupIcon size={14} /></B>
         <span className="tb-sep" />
-        <B title="Bulleted list" active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}><List size={14} /></B>
-        <B title="Numbered list" active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={14} /></B>
-        <B title="Task list" active={editor.isActive('taskList')} onClick={() => editor.chain().focus().toggleTaskList().run()}><ListChecks size={14} /></B>
+        <ListSplitButton editor={editor} title="Bulleted list" listType="bulletList" styleKey="listStyle"
+          active={editor.isActive('bulletList')} onToggle={() => editor.chain().focus().toggleBulletList().run()}
+          icon={<List size={14} />} options={BULLET_OPTIONS} />
+        <ListSplitButton editor={editor} title="Numbered list" listType="orderedList" styleKey="listStyle"
+          active={editor.isActive('orderedList')} onToggle={() => editor.chain().focus().toggleOrderedList().run()}
+          icon={<ListOrdered size={14} />} options={ORDERED_OPTIONS} />
+        <ListSplitButton editor={editor} title="Task list" listType="taskList" styleKey="shape"
+          active={editor.isActive('taskList')} onToggle={() => editor.chain().focus().toggleTaskList().run()}
+          icon={<ListChecks size={14} />} options={TASK_OPTIONS} />
         <B title="Quote" active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()}><Quote size={14} /></B>
         <span className="tb-sep" />
         <B title="Insert table" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}><TableIcon size={14} /></B>

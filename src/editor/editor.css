@@ -32,6 +32,58 @@ button.tb {
 button.tb:hover { background: var(--bg-hover); color: var(--text-primary); }
 button.tb.active { background: var(--accent-soft); color: var(--accent-strong); }
 
+/* Split list buttons: main toggle + caret that opens a per-list style menu */
+.tb-split { position: relative; display: inline-flex; align-items: center; }
+button.tb.tb-split-main { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+button.tb.tb-split-caret {
+  padding: 4px 1px;
+  margin-left: -2px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  color: var(--text-faint);
+}
+button.tb.tb-split-caret:hover { color: var(--text-primary); }
+.tb-split-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  min-width: 156px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+}
+.tb-split-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-align: left;
+}
+.tb-split-item:hover { background: var(--bg-hover); }
+.tb-split-item.active { color: var(--accent-strong); }
+
+/* Style preview swatches in the menu */
+.ls-swatch { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ls-swatch.ls-bulletList::before { content: ''; width: 9px; height: 9px; background: var(--text-secondary); }
+.ls-swatch.ls-bulletList.ls-disc::before { border-radius: 50%; }
+.ls-swatch.ls-bulletList.ls-circle::before { background: transparent; border: 1.5px solid var(--text-secondary); border-radius: 50%; }
+.ls-swatch.ls-bulletList.ls-square::before { border-radius: 1px; }
+.ls-swatch.ls-bulletList.ls-hexagon::before { clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%); }
+.ls-swatch.ls-taskList::before { content: ''; width: 12px; height: 12px; border: 1.6px solid var(--accent); background: transparent; }
+.ls-swatch.ls-taskList.ls-circle::before { border-radius: 50%; }
+.ls-swatch.ls-taskList.ls-square::before { border-radius: 2px; }
+.ls-swatch.ls-taskList.ls-hexagon::before { border: none; background: var(--accent); clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%); }
+
 .tb-sep { width: 1px; height: 18px; background: var(--border-subtle); margin: 0 5px; }
 .tb-block { padding: 3px 6px; font-size: var(--fs-sm); background: transparent; border-color: transparent; }
 .tb-block:hover { border-color: var(--border-default); }
@@ -199,29 +251,65 @@ button.tb.active { background: var(--accent-soft); color: var(--accent-strong); 
   transform: rotate(45deg);
 }
 
-/* Square (default) */
-:root[data-checkbox-shape='square'] .ProseMirror ul[data-type='taskList'] input[type='checkbox'] { border-radius: 3px; }
+/* Shape resolves to the per-list data-shape when set, else the global default
+   (:root[data-checkbox-shape], set in App.tsx). The two selectors are grouped and
+   mutually exclusive (:not([data-shape]) vs [data-shape=…]) so they never conflict. */
+
+/* Square */
+:root[data-checkbox-shape='square'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox'],
+.ProseMirror ul[data-type='taskList'][data-shape='square'] input[type='checkbox'] { border-radius: 3px; }
+
 /* Circle */
-:root[data-checkbox-shape='circle'] .ProseMirror ul[data-type='taskList'] input[type='checkbox'] { border-radius: 50%; }
-/* Hexagon — clip-path can't stroke, so layer a filled hexagon with an inset
-   background-colored hexagon to fake an outline; checked fills fully. */
-:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] input[type='checkbox'] {
+:root[data-checkbox-shape='circle'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox'],
+.ProseMirror ul[data-type='taskList'][data-shape='circle'] input[type='checkbox'] { border-radius: 50%; }
+
+/* Hexagon — clip-path can't stroke, so layer an inset panel-colored hexagon to
+   fake an outline; checked fills fully. */
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox'],
+.ProseMirror ul[data-type='taskList'][data-shape='hexagon'] input[type='checkbox'] {
   border: none;
   border-radius: 0;
   background: var(--border-strong);
   clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
 }
-:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] input[type='checkbox']::before {
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox']::before,
+.ProseMirror ul[data-type='taskList'][data-shape='hexagon'] input[type='checkbox']::before {
   content: '';
   position: absolute;
   inset: 1.6px;
   background: var(--bg-panel);
   clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
 }
-:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] input[type='checkbox']:checked,
-:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] input[type='checkbox']:checked::before {
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox']:checked,
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox']:checked::before,
+.ProseMirror ul[data-type='taskList'][data-shape='hexagon'] input[type='checkbox']:checked,
+.ProseMirror ul[data-type='taskList'][data-shape='hexagon'] input[type='checkbox']:checked::before {
   background: var(--accent);
 }
+
+/* Per-list bullet marker styles (data-list-style on the <ul>) */
+.ProseMirror ul[data-list-style='disc']   { list-style-type: disc; }
+.ProseMirror ul[data-list-style='circle'] { list-style-type: circle; }
+.ProseMirror ul[data-list-style='square'] { list-style-type: square; }
+.ProseMirror ul[data-list-style='hexagon'] { list-style: none; }
+.ProseMirror ul[data-list-style='hexagon'] > li { position: relative; }
+.ProseMirror ul[data-list-style='hexagon'] > li::before {
+  content: '';
+  position: absolute;
+  left: -1.15em;
+  top: 0.55em;
+  width: 7px;
+  height: 7px;
+  background: var(--text-secondary);
+  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
+}
+
+/* Per-list numbered styles (data-list-style on the <ol>) */
+.ProseMirror ol[data-list-style='decimal']     { list-style-type: decimal; }
+.ProseMirror ol[data-list-style='lower-alpha']  { list-style-type: lower-alpha; }
+.ProseMirror ol[data-list-style='lower-roman']  { list-style-type: lower-roman; }
+.ProseMirror ol[data-list-style='upper-alpha']  { list-style-type: upper-alpha; }
+.ProseMirror ol[data-list-style='upper-roman']  { list-style-type: upper-roman; }
 
 /* Tables */
 .ProseMirror table {
