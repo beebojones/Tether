@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tether — Collaborative Project Workspace</title>
+  <style>
+    :root {
+      --bg: #0d0b16;
+      --bg-2: #110f1d;
+      --panel: rgba(23, 19, 41, 0.74);
+      --panel-strong: rgba(31, 26, 54, 0.92);
+      --line: rgba(180, 168, 240, 0.18);
+      --line-strong: rgba(242, 140, 76, 0.32);
+      --text: #f1edf9;
+      --muted: #b5aecf;
+      --faint: #7f769c;
+      --violet: #8b7bff;
+      --violet-2: #c084f2;
+      --ember: #f28c4c;
+      --green: #4cc38a;
+      --red: #f2647c;
+      --yellow: #f2b04c;
+      --cyan: #6ed7ff;
+      --sans: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+      --display: "Space Grotesk", Inter, "Segoe UI", system-ui, sans-serif;
+      --mono: "Fira Code", "Cascadia Code", Consolas, monospace;
+      --ease: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; background: var(--bg); }
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text);
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at 8% 4%, rgba(139, 123, 255, 0.19), transparent 34%),
+        radial-gradient(circle at 91% 10%, rgba(242, 140, 76, 0.14), transparent 32%),
+        radial-gradient(circle at 78% 86%, rgba(110, 215, 255, 0.09), transparent 30%),
+        linear-gradient(180deg, #0d0b16 0%, #090812 58%, #07060d 100%);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        linear-gradient(rgba(180, 168, 240, 0.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(180, 168, 240, 0.032) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(ellipse at 50% 26%, rgba(0, 0, 0, 0.72), transparent 76%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto 0 0 0;
+      height: 34vh;
+      z-index: -1;
+      background: radial-gradient(ellipse at 50% 100%, rgba(242, 140, 76, 0.18), transparent 68%);
+      pointer-events: none;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    .nav {
+      position: fixed;
+      z-index: 50;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      padding: 16px 34px;
+      background: rgba(8, 6, 16, 0.72);
+      border-bottom: 1px solid rgba(180, 168, 240, 0.1);
+      backdrop-filter: blur(22px);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--violet), var(--ember));
+      box-shadow: 0 0 34px rgba(139, 123, 255, 0.28);
+    }
+
+    .mark svg { width: 22px; height: 22px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      transition: color 180ms var(--ease);
+    }
+
+    .nav-links a:hover { color: var(--ember); }
+
+    section {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      align-items: center;
+      padding: 118px 36px 84px;
+      overflow: hidden;
+    }
+
+    .inner {
+      width: min(1140px, 100%);
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      margin-bottom: 18px;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 {
+      font-family: var(--display);
+      letter-spacing: 0;
+      line-height: 1.02;
+    }
+
+    h1 {
+      font-size: clamp(68px, 13vw, 154px);
+      max-width: 980px;
+      background: linear-gradient(90deg, #fff 2%, #c9c0ff 28%, var(--violet) 50%, var(--ember) 78%, #fff 100%);
+      background-size: 180% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 8s ease-in-out infinite;
+    }
+
+    h2 {
+      max-width: 880px;
+      margin-bottom: 22px;
+      font-size: clamp(34px, 5.2vw, 62px);
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 19px;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.65;
+    }
+
+    .hero {
+      min-height: 100vh;
+      text-align: center;
+    }
+
+    #heroCanvas {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.78;
+    }
+
+    .hero .inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      justify-items: center;
+    }
+
+    .hero-sub {
+      max-width: 690px;
+      margin: 24px auto 34px;
+      font-size: clamp(18px, 2.4vw, 24px);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 22px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      background: rgba(23, 19, 41, 0.54);
+      transition: border-color 180ms var(--ease), background 180ms var(--ease), transform 180ms var(--ease);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+      background: rgba(31, 26, 54, 0.82);
+    }
+
+    .btn.primary {
+      border-color: rgba(242, 140, 76, 0.46);
+      background: linear-gradient(135deg, rgba(139, 123, 255, 0.26), rgba(242, 140, 76, 0.18));
+      color: #fff;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 0.86fr) minmax(420px, 1.14fr);
+      gap: 40px;
+      align-items: center;
+    }
+
+    .lead { max-width: 680px; font-size: 19px; }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 24px 80px rgba(4, 3, 10, 0.44);
+      backdrop-filter: blur(22px);
+    }
+
+    .screenshot {
+      overflow: hidden;
+      border: 1px solid rgba(180, 168, 240, 0.22);
+      border-radius: 18px;
+      background: #0a0912;
+      box-shadow: 0 30px 90px rgba(4, 3, 10, 0.58), 0 0 0 1px rgba(242, 140, 76, 0.08);
+    }
+
+    .screenshot img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      object-position: top left;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 42px;
+    }
+
+    .card {
+      min-height: 182px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(23, 19, 41, 0.66);
+      box-shadow: 0 14px 40px rgba(4, 3, 10, 0.28);
+    }
+
+    .card .icon {
+      width: 38px;
+      height: 38px;
+      margin-bottom: 18px;
+      border: 1px solid rgba(180, 168, 240, 0.2);
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(139, 123, 255, 0.22), rgba(242, 140, 76, 0.14));
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .card p { font-size: 14px; line-height: 1.58; }
+
+    .signal-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 34px;
+    }
+
+    .signal {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(15, 12, 28, 0.7);
+      text-align: center;
+    }
+
+    .signal strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #fff;
+      font-family: var(--display);
+      font-size: clamp(34px, 4.6vw, 56px);
+      line-height: 1;
+    }
+
+    .signal span {
+      color: var(--faint);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      overflow: hidden;
+      margin-top: 44px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--line);
+    }
+
+    .step {
+      min-height: 210px;
+      padding: 24px 20px;
+      background: rgba(15, 12, 28, 0.92);
+    }
+
+    .step-num {
+      margin-bottom: 26px;
+      color: var(--ember);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+    }
+
+    .step p { font-size: 13px; line-height: 1.55; }
+
+    .sync-map {
+      position: relative;
+      min-height: 440px;
+      padding: 34px;
+      overflow: hidden;
+    }
+
+    .node {
+      position: absolute;
+      width: 150px;
+      min-height: 108px;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      border: 1px solid rgba(180, 168, 240, 0.22);
+      border-radius: 16px;
+      background: rgba(12, 10, 23, 0.86);
+      text-align: center;
+      box-shadow: 0 20px 58px rgba(4, 3, 10, 0.36);
+    }
+
+    .node b {
+      display: block;
+      margin-bottom: 6px;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .node span {
+      color: var(--faint);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .node.a { left: 9%; top: 35%; }
+    .node.b { right: 9%; top: 35%; }
+    .node.c {
+      left: 50%;
+      top: 35%;
+      transform: translateX(-50%);
+      border-color: rgba(242, 140, 76, 0.36);
+      background: linear-gradient(135deg, rgba(139, 123, 255, 0.18), rgba(242, 140, 76, 0.14)), rgba(12, 10, 23, 0.88);
+    }
+
+    .sync-line {
+      position: absolute;
+      left: 20%;
+      right: 20%;
+      top: 49%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--violet), var(--ember), var(--cyan));
+      opacity: 0.78;
+    }
+
+    .pulse {
+      position: absolute;
+      top: calc(49% - 5px);
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--ember);
+      box-shadow: 0 0 22px var(--ember);
+      animation: pulse 4s linear infinite;
+    }
+
+    .caption {
+      position: absolute;
+      left: 50%;
+      bottom: 34px;
+      width: min(620px, calc(100% - 56px));
+      transform: translateX(-50%);
+      color: var(--muted);
+      text-align: center;
+      font-size: 15px;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 40px;
+    }
+
+    .shot-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(15, 12, 28, 0.72);
+    }
+
+    .shot-card img {
+      width: 100%;
+      height: 270px;
+      object-fit: cover;
+      object-position: top left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .shot-card div { padding: 18px 20px 20px; }
+    .shot-card p { font-size: 14px; }
+
+    .stack {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 34px;
+      align-items: stretch;
+      margin-top: 38px;
+    }
+
+    .stack-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stack-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15, 12, 28, 0.72);
+    }
+
+    .stack-item span:first-child {
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .stack-item span:last-child {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .terminal {
+      min-height: 100%;
+      padding: 24px;
+      border: 1px solid rgba(76, 195, 138, 0.24);
+      border-radius: 16px;
+      background: #070b0c;
+      color: #bdf7d9;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.85;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .terminal .dim { color: #577568; }
+    .terminal .ok { color: var(--green); }
+    .terminal .warn { color: var(--yellow); }
+
+    .timeline {
+      display: grid;
+      gap: 14px;
+      margin-top: 38px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 24px;
+      align-items: start;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(15, 12, 28, 0.68);
+    }
+
+    .phase {
+      color: var(--ember);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .timeline-item p { font-size: 14px; line-height: 1.55; }
+
+    .close {
+      min-height: 82vh;
+      text-align: center;
+    }
+
+    .close .inner {
+      display: grid;
+      justify-items: center;
+    }
+
+    .close h2 {
+      max-width: 980px;
+      font-size: clamp(44px, 8vw, 96px);
+    }
+
+    .footer {
+      margin-top: 40px;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(34px);
+      transition: opacity 720ms var(--ease), transform 720ms var(--ease);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes pulse {
+      from { left: 20%; opacity: 0; }
+      12% { opacity: 1; }
+      88% { opacity: 1; }
+      to { left: 78%; opacity: 0; }
+    }
+
+    @media (max-width: 920px) {
+      .nav { padding: 14px 18px; }
+      .nav-links { display: none; }
+      section { padding: 96px 20px 70px; }
+      .split, .stack { grid-template-columns: 1fr; }
+      .grid, .signal-row, .gallery { grid-template-columns: 1fr; }
+      .workflow { grid-template-columns: 1fr; }
+      .step { min-height: auto; }
+      .sync-map { min-height: 560px; }
+      .sync-line { left: 50%; right: auto; top: 17%; bottom: 17%; width: 2px; height: auto; }
+      .pulse { left: calc(50% - 5px); animation: pulseMobile 4s linear infinite; }
+      .node { left: 50%; transform: translateX(-50%); }
+      .node.a { top: 8%; }
+      .node.c { top: 38%; }
+      .node.b { right: auto; top: 68%; }
+      .caption { bottom: 24px; }
+      .timeline-item { grid-template-columns: 1fr; gap: 8px; }
+    }
+
+    @keyframes pulseMobile {
+      from { top: 17%; opacity: 0; }
+      12% { opacity: 1; }
+      88% { opacity: 1; }
+      to { top: 78%; opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="nav">
+    <a class="brand" href="#hero" aria-label="Tether home">
+      <span class="mark">
+        <svg viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="52" stroke-linecap="round" aria-hidden="true">
+          <circle cx="168" cy="256" r="92"></circle>
+          <circle cx="400" cy="256" r="44"></circle>
+          <line x1="260" y1="256" x2="356" y2="256"></line>
+        </svg>
+      </span>
+      Tether
+    </a>
+    <ul class="nav-links">
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#workspace">Workspace</a></li>
+      <li><a href="#sync">Sync</a></li>
+      <li><a href="#reports">Reports</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+    </ul>
+  </nav>
+
+  <section class="hero" id="hero">
+    <canvas id="heroCanvas" aria-hidden="true"></canvas>
+    <div class="inner">
+      <div class="eyebrow reveal">Local-first project command center</div>
+      <h1 class="reveal">Tether</h1>
+      <p class="hero-sub reveal">A desktop workspace that keeps two people, two computers, and one project tied together: work items, decisions, risks, access requests, meetings, milestones, reports, and live presentation mode.</p>
+      <div class="hero-actions reveal">
+        <a class="btn primary" href="#workspace">See the workspace</a>
+        <a class="btn" href="#security">Review the architecture</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="problem">
+    <div class="inner">
+      <div class="eyebrow reveal">The problem</div>
+      <h2 class="reveal">Small-team projects drift when the truth lives in five places.</h2>
+      <p class="lead reveal">Chats carry decisions, spreadsheets carry access requests, notes carry meeting context, and leadership updates become archaeology. Tether turns that scattered surface area into one editable, linked, auditable project record.</p>
+      <div class="grid">
+        <article class="card reveal">
+          <div class="icon">01</div>
+          <h3>Lost context</h3>
+          <p>Requirements, risks, blockers, and meeting notes stay connected through typed IDs and explicit links instead of memory and search luck.</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon">02</div>
+          <h3>Access drag</h3>
+          <p>Access requests get their own tracker with status, system, next action, owner, and follow-up dates.</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon">03</div>
+          <h3>Update churn</h3>
+          <p>Reports and presentation mode are generated from live project data, so status meetings start from the record instead of rebuilding it.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="workspace">
+    <div class="inner split">
+      <div>
+        <div class="eyebrow reveal">The workspace</div>
+        <h2 class="reveal">One operating surface for the whole project.</h2>
+        <p class="lead reveal">Dashboard, all work, board, roadmap, access tracker, decisions, meetings, risks, reports, activity, conflicts, and settings are all views over the same local SQLite project record.</p>
+        <div class="signal-row reveal">
+          <div class="signal"><strong>13</strong><span>Item types</span></div>
+          <div class="signal"><strong>0</strong><span>Cloud services required</span></div>
+          <div class="signal"><strong>10</strong><span>Core tests passing</span></div>
+          <div class="signal"><strong>1</strong><span>Source of truth</span></div>
+        </div>
+      </div>
+      <div class="screenshot reveal">
+        <img src="assets/dashboard.png" alt="Tether dashboard showing project health, focus, blockers, access, and milestone panels">
+      </div>
+    </div>
+  </section>
+
+  <section id="workflow">
+    <div class="inner">
+      <div class="eyebrow reveal">How work moves</div>
+      <h2 class="reveal">From fuzzy notes to trackable project motion.</h2>
+      <p class="lead reveal">Tether is built around work items: each one has a type, status, owner, body, structured fields, comments, links, activity, versions, and searchable history.</p>
+      <div class="workflow reveal">
+        <div class="step">
+          <div class="step-num">01 / Capture</div>
+          <h3>Create the thing</h3>
+          <p>Task, feature, requirement, decision, risk, blocker, access request, meeting note, idea, question, defect, or research item.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">02 / Connect</div>
+          <h3>Link the context</h3>
+          <p>Relates, blocks, implements, supports, requires access, discussed in, validates, supersedes, and parent/child links.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">03 / Move</div>
+          <h3>Work the board</h3>
+          <p>Use list filters, quick edits, or the board to move statuses without breaking the underlying record.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">04 / Review</div>
+          <h3>Resolve friction</h3>
+          <p>Blocked, access pending, open decisions, active risks, and sync conflicts get surfaced instead of buried.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">05 / Report</div>
+          <h3>Tell the story</h3>
+          <p>Generate leadership snapshots, markdown updates, PDFs, and fullscreen presentations from the same live data.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sync">
+    <div class="inner split">
+      <div>
+        <div class="eyebrow reveal">Collaboration</div>
+        <h2 class="reveal">Local-first, shared-folder sync.</h2>
+        <p class="lead reveal">Each computer keeps its own SQLite database. Mutations become append-only JSONL operations in a shared folder, typically OneDrive or SharePoint. The SQLite database itself is never placed in the synced folder.</p>
+      </div>
+      <div class="panel sync-map reveal">
+        <div class="sync-line"></div>
+        <div class="pulse"></div>
+        <div class="node a"><div><b>John</b><span>Private local database</span></div></div>
+        <div class="node c"><div><b>Shared ops</b><span>Immutable JSONL + blobs</span></div></div>
+        <div class="node b"><div><b>Mark</b><span>Private local database</span></div></div>
+        <p class="caption">Offline edits queue locally, field-level changes converge, and title/body conflicts are surfaced for human review.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="reports">
+    <div class="inner">
+      <div class="eyebrow reveal">What it can do</div>
+      <h2 class="reveal">Run the project and present the project from the same data.</h2>
+      <p class="lead reveal">Tether has purpose-built screens for day-to-day execution and leadership communication. These are live screenshots from the current browser-preview build.</p>
+      <div class="gallery">
+        <article class="shot-card reveal">
+          <img src="assets/board.png" alt="Tether board view with work item columns">
+          <div>
+            <h3>Board view</h3>
+            <p>Move cards through status lanes while preserving item history, owner, priority, and linked context.</p>
+          </div>
+        </article>
+        <article class="shot-card reveal">
+          <img src="assets/reports.png" alt="Tether reports view with generated report options">
+          <div>
+            <h3>Reports</h3>
+            <p>Generate leadership updates, copy them into Teams or email, save Markdown, or print a PDF snapshot.</p>
+          </div>
+        </article>
+        <article class="shot-card reveal">
+          <img src="assets/present.png" alt="Tether presentation mode title slide for Support AI">
+          <div>
+            <h3>Presentation mode</h3>
+            <p>Fullscreen walkthrough for screen sharing, navigable with arrow keys, space, and Escape.</p>
+          </div>
+        </article>
+        <article class="shot-card reveal">
+          <img src="assets/dashboard.png" alt="Tether dashboard overview">
+          <div>
+            <h3>Project health</h3>
+            <p>Dashboard health, blocked work, pending access, active risks, due dates, activity, and milestone progress in one view.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="security">
+    <div class="inner">
+      <div class="eyebrow reveal">Architecture and safety</div>
+      <h2 class="reveal">Designed for inspectable, offline-safe project data.</h2>
+      <p class="lead reveal">Tether makes no network calls of its own. Sync, if enabled, rides on the folder client the users choose. The renderer runs with context isolation, no Node integration, and a typed IPC allowlist.</p>
+      <div class="stack">
+        <div class="stack-list reveal">
+          <div class="stack-item"><span>Desktop shell</span><span>Electron + React + TypeScript</span></div>
+          <div class="stack-item"><span>Local store</span><span>SQLite / better-sqlite3 / WAL</span></div>
+          <div class="stack-item"><span>Sync model</span><span>Append-only oplog over folder transport</span></div>
+          <div class="stack-item"><span>Search</span><span>FTS5 over work item content</span></div>
+          <div class="stack-item"><span>Renderer boundary</span><span>contextBridge IPC allowlist</span></div>
+          <div class="stack-item"><span>Production CSP</span><span>self-only scripts, images, fonts</span></div>
+        </div>
+        <pre class="terminal reveal"><span class="dim">$ npm test</span>
+<span class="ok">ok</span> migrations create schema and device identity
+<span class="ok">ok</span> item CRUD, activity, links, comments, versions
+<span class="ok">ok</span> sync convergence through a shared folder
+<span class="ok">ok</span> conflict surfacing and deterministic resolution
+<span class="ok">ok</span> offline queue and corruption quarantine
+
+<span class="dim">$ npm run build</span>
+<span class="ok">built</span> dist-electron/main.js
+<span class="ok">built</span> dist-electron/preload.js
+<span class="ok">built</span> renderer assets
+<span class="warn">warn</span> large renderer chunk; functional build passed</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="roadmap">
+    <div class="inner">
+      <div class="eyebrow reveal">Readiness</div>
+      <h2 class="reveal">What works now, and what is next.</h2>
+      <div class="timeline">
+        <div class="timeline-item reveal">
+          <div class="phase">Working now</div>
+          <div>
+            <h3>Core project record</h3>
+            <p>Schema, migrations, item CRUD, links, comments, versions, activity, milestones, releases, users, search, sample data, and backups.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div class="phase">Working now</div>
+          <div>
+            <h3>Collaboration sync</h3>
+            <p>Folder transport, two-device convergence, conflict review, deterministic ident collision handling, offline queue, and attachment blob transport.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div class="phase">Working now</div>
+          <div>
+            <h3>Execution views</h3>
+            <p>Dashboard, All Work, Board, Roadmap, Access Tracker, Decisions, Meetings, Risks & Blockers, Reports, Activity, Conflicts, Settings, and Onboarding.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div class="phase">In progress</div>
+          <div>
+            <h3>Rich editor finishing pass</h3>
+            <p>TipTap foundations are present; the project record notes plain-text autosave remains the current baseline while rich blocks are completed.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div class="phase">Next</div>
+          <div>
+            <h3>Packaging and release hardening</h3>
+            <p>Electron Builder NSIS packaging, signed release workflow, dependency update cadence, and broader installer validation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="close" id="close">
+    <div class="inner">
+      <div class="eyebrow reveal">Tether</div>
+      <h2 class="reveal">A project workspace that keeps the work, the context, and the update tied together.</h2>
+      <p class="lead reveal">Built for small teams that need a shared project brain without adding a new service, a new server, or another fragile spreadsheet.</p>
+      <div class="hero-actions reveal">
+        <a class="btn primary" href="#hero">Back to top</a>
+        <a class="btn" href="../supportai-tether/README.md">Read the app README</a>
+      </div>
+      <div class="footer reveal">Tether · Independent software · 2026</div>
+    </div>
+  </section>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    document.querySelectorAll('#hero .reveal').forEach((el) => el.classList.add('visible'));
+
+    (function heroCanvas() {
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      let w = 0;
+      let h = 0;
+      let particles = [];
+      const colors = [
+        [139, 123, 255],
+        [242, 140, 76],
+        [192, 132, 242],
+        [110, 215, 255]
+      ];
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        w = canvas.width = Math.max(1, Math.floor(rect.width * devicePixelRatio));
+        h = canvas.height = Math.max(1, Math.floor(rect.height * devicePixelRatio));
+        canvas.width = w;
+        canvas.height = h;
+        particles = Array.from({ length: Math.min(118, Math.floor((w * h) / 18000)) }, () => ({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.36 * devicePixelRatio,
+          vy: (Math.random() - 0.5) * 0.36 * devicePixelRatio,
+          r: (Math.random() * 1.8 + 0.7) * devicePixelRatio,
+          c: colors[Math.floor(Math.random() * colors.length)]
+        }));
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = w;
+          if (p.x > w) p.x = 0;
+          if (p.y < 0) p.y = h;
+          if (p.y > h) p.y = 0;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},0.7)`;
+          ctx.fill();
+
+          for (let j = i + 1; j < particles.length; j++) {
+            const q = particles[j];
+            const dx = p.x - q.x;
+            const dy = p.y - q.y;
+            const d = Math.hypot(dx, dy);
+            const max = 128 * devicePixelRatio;
+            if (d < max) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(q.x, q.y);
+              ctx.strokeStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${0.12 * (1 - d / max)})`;
+              ctx.lineWidth = 0.7 * devicePixelRatio;
+              ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(draw);
+      }
+
+      resize();
+      draw();
+      addEventListener('resize', resize);
+    })();
+  </script>
+</body>
+</html>
