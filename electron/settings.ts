@@ -12,7 +12,6 @@ export interface UserIdentity {
 export interface AppSettings {
   currentUser: UserIdentity | null;
   syncFolder: string | null; // OneDrive/SharePoint-synced directory; null = local-only mode
-  theme: 'dark' | 'light';
   density: 'compact' | 'comfortable';
   seedLoaded: boolean;
 }
@@ -20,7 +19,6 @@ export interface AppSettings {
 const DEFAULTS: AppSettings = {
   currentUser: null,
   syncFolder: null,
-  theme: 'dark',
   density: 'compact',
   seedLoaded: false,
 };

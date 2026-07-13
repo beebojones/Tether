@@ -41,7 +41,7 @@ export function registerIpc(deps: IpcDeps): void {
   // ---------- settings / identity ----------
   ipcMain.handle('settings:get', () => settings.get());
   ipcMain.handle('settings:set', (_e, patch: Record<string, unknown>) => {
-    const allowed: (keyof ReturnType<Settings['get']>)[] = ['theme', 'density', 'seedLoaded'];
+    const allowed: (keyof ReturnType<Settings['get']>)[] = ['density', 'seedLoaded'];
     const clean: Record<string, unknown> = {};
     for (const k of allowed) if (k in patch) clean[k] = patch[k];
     return settings.set(clean);

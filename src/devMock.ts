@@ -192,7 +192,6 @@ export function installDevMock(): void {
       get: async () => ({
         currentUser: { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF' },
         syncFolder: syncStatus.folder,
-        theme: 'dark' as const,
         density: mockDensity,
         seedLoaded: true,
       }),

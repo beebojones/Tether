@@ -22,7 +22,6 @@ export interface UserIdentity {
 export interface AppSettings {
   currentUser: UserIdentity | null;
   syncFolder: string | null;
-  theme: 'dark' | 'light';
   density: 'compact' | 'comfortable';
   seedLoaded: boolean;
 }
