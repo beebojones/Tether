@@ -28,6 +28,15 @@
       --ease: cubic-bezier(0.2, 0, 0, 1);
     }
 
+    /* Self-hosted brand fonts — same faces the Tether app ships (SIL OFL), no network. */
+    @font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('assets/fonts/inter-400.woff2') format('woff2'); }
+    @font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url('assets/fonts/inter-600.woff2') format('woff2'); }
+    @font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url('assets/fonts/inter-700.woff2') format('woff2'); }
+    @font-face { font-family: 'Space Grotesk'; font-weight: 500; font-display: swap; src: url('assets/fonts/space-grotesk-500.woff2') format('woff2'); }
+    @font-face { font-family: 'Space Grotesk'; font-weight: 700; font-display: swap; src: url('assets/fonts/space-grotesk-700.woff2') format('woff2'); }
+    @font-face { font-family: 'Fira Code'; font-weight: 400; font-display: swap; src: url('assets/fonts/fira-code-400.woff2') format('woff2'); }
+    @font-face { font-family: 'Fira Code'; font-weight: 600; font-display: swap; src: url('assets/fonts/fira-code-600.woff2') format('woff2'); }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; background: var(--bg); }
     body {
@@ -436,6 +445,19 @@
       animation: pulse 4s linear infinite;
     }
 
+    /* Team sync map: SVG hub-and-spoke, small team around one shared folder. */
+    .sync-map { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+    .sync-map .caption { position: static; transform: none; left: auto; bottom: auto; }
+    .sync-svg { width: 100%; max-width: 680px; height: auto; display: block; }
+    .sync-svg .spokes line { stroke: url(#syncGrad); stroke-width: 2; opacity: 0.6; }
+    .sync-svg .n-rect { fill: rgba(12, 10, 23, 0.86); stroke: rgba(180, 168, 240, 0.22); }
+    .sync-svg .n-hub { fill: rgba(20, 14, 30, 0.92); stroke: rgba(242, 140, 76, 0.42); stroke-width: 1.4; }
+    .sync-svg .n-label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; fill: var(--text); }
+    .sync-svg .n-label.hub { fill: var(--ember); }
+    .sync-svg .n-sub { font-family: var(--sans); font-size: 11px; fill: var(--faint); }
+    .sync-svg .pz { fill: var(--ember); filter: drop-shadow(0 0 6px var(--ember)); }
+    @media (prefers-reduced-motion: reduce) { .sync-svg .pz { opacity: 0 !important; } }
+
     .caption {
       position: absolute;
       left: 50%;
@@ -718,7 +740,7 @@
       .grid, .signal-row, .gallery { grid-template-columns: 1fr; }
       .workflow { grid-template-columns: 1fr; }
       .step { min-height: auto; }
-      .sync-map { min-height: 620px; padding: 24px 18px 138px; }
+      .sync-map { min-height: 0; padding: 22px 16px; }
       .sync-line { left: 50%; right: auto; top: 78px; bottom: 168px; width: 2px; height: auto; }
       .pulse { left: calc(50% - 5px); animation: pulseMobile 4s linear infinite; }
       .node { width: min(176px, calc(100% - 48px)); min-height: 104px; }
@@ -851,8 +873,8 @@
         font-size: 14px;
       }
       .sync-map {
-        min-height: 600px;
-        padding: 22px 14px 132px;
+        min-height: 0;
+        padding: 20px 12px;
       }
       .node {
         width: min(172px, calc(100% - 44px));
@@ -937,7 +959,7 @@
     <div class="inner">
       <div class="eyebrow reveal">Local-first project command center</div>
       <h1 class="reveal">Tether</h1>
-      <p class="hero-sub reveal">A desktop workspace that keeps two people, two computers, and one project tied together: work items, decisions, risks, access requests, meetings, milestones, reports, and live presentation mode.</p>
+      <p class="hero-sub reveal">A desktop workspace that keeps a small team, their computers, and one project tied together: work items, decisions, risks, access requests, meetings, milestones, reports, and live presentation mode.</p>
       <div class="hero-actions reveal">
         <a class="btn primary" href="#workspace">See the workspace</a>
         <a class="btn" href="#security">Review the architecture</a>
@@ -1032,12 +1054,49 @@
         <p class="lead reveal">Each computer keeps its own SQLite database. Mutations become append-only JSONL operations in a shared folder, typically OneDrive or SharePoint. The SQLite database itself is never placed in the synced folder.</p>
       </div>
       <div class="panel sync-map reveal">
-        <div class="sync-line"></div>
-        <div class="pulse"></div>
-        <div class="node a"><div><b>John</b><span>Private local database</span></div></div>
-        <div class="node c"><div><b>Shared ops</b><span>Immutable JSONL + blobs</span></div></div>
-        <div class="node b"><div><b>Mark</b><span>Private local database</span></div></div>
-        <p class="caption">Offline edits queue locally, field-level changes converge, and title/body conflicts are surfaced for human review.</p>
+        <svg class="sync-svg" viewBox="0 0 760 440" role="img" aria-label="A small team syncing one project through a shared folder">
+          <defs>
+            <linearGradient id="syncGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#8b7bff"/><stop offset="0.5" stop-color="#f28c4c"/><stop offset="1" stop-color="#6ed7ff"/>
+            </linearGradient>
+          </defs>
+          <g class="spokes">
+            <line x1="106" y1="85" x2="380" y2="220"/>
+            <line x1="654" y1="85" x2="380" y2="220"/>
+            <line x1="106" y1="355" x2="380" y2="220"/>
+            <line x1="654" y1="355" x2="380" y2="220"/>
+          </g>
+          <circle class="pz" r="5"><animate attributeName="cx" values="106;380" dur="2.6s" repeatCount="indefinite" begin="0s"/><animate attributeName="cy" values="85;220" dur="2.6s" repeatCount="indefinite" begin="0s"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.6s" repeatCount="indefinite" begin="0s"/></circle>
+          <circle class="pz" r="5"><animate attributeName="cx" values="380;654" dur="2.6s" repeatCount="indefinite" begin="0.65s"/><animate attributeName="cy" values="220;85" dur="2.6s" repeatCount="indefinite" begin="0.65s"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.6s" repeatCount="indefinite" begin="0.65s"/></circle>
+          <circle class="pz" r="5"><animate attributeName="cx" values="106;380" dur="2.6s" repeatCount="indefinite" begin="1.3s"/><animate attributeName="cy" values="355;220" dur="2.6s" repeatCount="indefinite" begin="1.3s"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.6s" repeatCount="indefinite" begin="1.3s"/></circle>
+          <circle class="pz" r="5"><animate attributeName="cx" values="380;654" dur="2.6s" repeatCount="indefinite" begin="1.95s"/><animate attributeName="cy" values="220;355" dur="2.6s" repeatCount="indefinite" begin="1.95s"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.6s" repeatCount="indefinite" begin="1.95s"/></circle>
+          <g>
+            <rect class="n-rect" x="36" y="52" width="140" height="66" rx="14"/>
+            <text class="n-label" x="106" y="82" text-anchor="middle">TEAMMATE</text>
+            <text class="n-sub" x="106" y="101" text-anchor="middle">Private local database</text>
+          </g>
+          <g>
+            <rect class="n-rect" x="584" y="52" width="140" height="66" rx="14"/>
+            <text class="n-label" x="654" y="82" text-anchor="middle">TEAMMATE</text>
+            <text class="n-sub" x="654" y="101" text-anchor="middle">Private local database</text>
+          </g>
+          <g>
+            <rect class="n-rect" x="36" y="322" width="140" height="66" rx="14"/>
+            <text class="n-label" x="106" y="352" text-anchor="middle">TEAMMATE</text>
+            <text class="n-sub" x="106" y="371" text-anchor="middle">Private local database</text>
+          </g>
+          <g>
+            <rect class="n-rect" x="584" y="322" width="140" height="66" rx="14"/>
+            <text class="n-label" x="654" y="352" text-anchor="middle">TEAMMATE</text>
+            <text class="n-sub" x="654" y="371" text-anchor="middle">Private local database</text>
+          </g>
+          <g>
+            <rect class="n-hub" x="298" y="176" width="164" height="88" rx="16"/>
+            <text class="n-label hub" x="380" y="211" text-anchor="middle">SHARED FOLDER</text>
+            <text class="n-sub" x="380" y="231" text-anchor="middle">Immutable ops + blobs</text>
+          </g>
+        </svg>
+        <p class="caption">Every teammate keeps a private local database. Edits queue offline, converge field by field through one shared folder, and title/body conflicts are surfaced for review.</p>
       </div>
     </div>
 
@@ -1046,7 +1105,7 @@
         <div class="flow-step reveal">
           <span class="num">1</span>
           <h4>Edit locally</h4>
-          <p>John changes a status. Tether writes it to his own SQLite database and appends a field-level op to a local log. Instant, and offline-safe.</p>
+          <p>A teammate changes a status. Tether writes it to their own SQLite database and appends a field-level op to a local log. Instant, and offline-safe.</p>
         </div>
         <div class="flow-step reveal">
           <span class="num">2</span>
@@ -1055,8 +1114,8 @@
         </div>
         <div class="flow-step reveal">
           <span class="num">3</span>
-          <h4>Replay on Mark's machine</h4>
-          <p>Mark's Tether reads new batches, skips ops it has seen, and replays the rest. Lamport clocks order edits; concurrent text goes to the Conflicts screen.</p>
+          <h4>Replay on every other machine</h4>
+          <p>Each teammate's Tether reads new batches, skips ops it has seen, and replays the rest. Lamport clocks order edits; concurrent text goes to the Conflicts screen.</p>
         </div>
       </div>
     </div>
@@ -1066,7 +1125,7 @@
     <div class="inner">
       <div class="eyebrow reveal">The architecture question</div>
       <h2 class="reveal">Why not just put it in Neon?</h2>
-      <p class="lead reveal">A hosted Postgres like Neon is a great fit for a public demo or a fully approved cloud app. For two people syncing a work project, it quietly adds a database to secure, credentials to manage, and data leaving the boundary, without removing the hard part. Here is the honest comparison.</p>
+      <p class="lead reveal">A hosted Postgres like Neon is a great fit for a public demo or a fully approved cloud app. For a small team syncing a work project, it quietly adds a database to secure, credentials to manage, and data leaving the boundary, without removing the hard part. Here is the honest comparison.</p>
 
       <div class="versus">
         <div class="vs-col win reveal">
@@ -1121,7 +1180,7 @@
           </div>
         </article>
         <article class="shot-card reveal">
-          <img src="assets/present.png" alt="Tether presentation mode title slide for Support AI">
+          <img src="assets/present.png" alt="Tether presentation mode title slide">
           <div>
             <h3>Presentation mode</h3>
             <p>Fullscreen walkthrough for screen sharing, navigable with arrow keys, space, and Escape.</p>
