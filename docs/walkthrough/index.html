@@ -610,22 +610,22 @@
       .grid, .signal-row, .gallery { grid-template-columns: 1fr; }
       .workflow { grid-template-columns: 1fr; }
       .step { min-height: auto; }
-      .sync-map { min-height: 560px; }
-      .sync-line { left: 50%; right: auto; top: 17%; bottom: 17%; width: 2px; height: auto; }
+      .sync-map { min-height: 620px; padding: 24px 18px 138px; }
+      .sync-line { left: 50%; right: auto; top: 78px; bottom: 168px; width: 2px; height: auto; }
       .pulse { left: calc(50% - 5px); animation: pulseMobile 4s linear infinite; }
-      .node { left: 50%; transform: translateX(-50%); }
-      .node.a { top: 8%; }
-      .node.c { top: 38%; }
-      .node.b { right: auto; top: 68%; }
-      .caption { bottom: 24px; }
+      .node { width: min(176px, calc(100% - 48px)); min-height: 104px; }
+      .node.a { left: 50%; right: auto; top: 46px; transform: translateX(-50%); }
+      .node.c { left: 50%; right: auto; top: 220px; transform: translateX(-50%); }
+      .node.b { left: 50%; right: auto; top: 394px; transform: translateX(-50%); }
+      .caption { bottom: 28px; width: calc(100% - 42px); font-size: 14px; line-height: 1.55; }
       .timeline-item { grid-template-columns: 1fr; gap: 8px; }
     }
 
     @keyframes pulseMobile {
-      from { top: 17%; opacity: 0; }
+      from { top: 78px; opacity: 0; }
       12% { opacity: 1; }
       88% { opacity: 1; }
-      to { top: 78%; opacity: 0; }
+      to { top: 452px; opacity: 0; }
     }
   </style>
 </head>
