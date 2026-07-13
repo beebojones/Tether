@@ -126,7 +126,7 @@ const conflicts: SyncConflict[] = [
   {
     id: uid(), entity: 'item', entityId: byKey('requirement', 2).id, field: 'title',
     localValue: 'No PHI or customer data may leave approved systems',
-    remoteValue: 'No PHI, PII, or customer data may leave McKesson-approved systems',
+    remoteValue: 'No PHI, PII, or customer data may leave approved systems',
     remoteDevice: 'mark-device', remoteActor: 'mark', detectedAt: daysAgo(0.1), resolvedAt: null, resolution: null,
   },
 ];
@@ -139,7 +139,7 @@ const emit = () => listeners.forEach((l) => l({ entity: '*', entityId: '*' }));
 
 const syncStatus: SyncStatus = {
   state: 'idle',
-  folder: 'C:\\Users\\jcrouch\\OneDrive - McKesson\\SupportAI-Shared',
+  folder: 'C:\\Users\\jcrouch\\OneDrive\\Tether-Shared',
   lastSyncAt: daysAgo(0.001),
   lastError: null,
   pendingOps: 0,

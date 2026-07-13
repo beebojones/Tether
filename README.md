@@ -1,10 +1,14 @@
-# Tether — Support AI Project Workspace
+# Tether — Collaborative Project Workspace
 
-The purpose-built desktop workspace and single source of truth for building
-McKesson's Support AI initiative. Tracks work items, requirements, decisions,
-risks, blockers, access requests, meetings, milestones, and releases — shared
-between two computers through a OneDrive/SharePoint-synced folder, with
-leadership reports and a presentation mode generated from live data.
+A desktop workspace and single source of truth for a small team's projects.
+Tracks work items, requirements, decisions, risks, blockers, access requests,
+meetings, milestones, and releases — shared between computers through a
+folder-based sync (e.g. OneDrive/SharePoint), with leadership reports and a
+presentation mode generated from live data.
+
+Tether is independent software © John Crouch — not affiliated with, sponsored by,
+or endorsed by any organization. The first project managed in Tether is the
+Support AI initiative; "Support AI" is project content, not application identity.
 
 ## Quick start (development)
 
@@ -29,10 +33,10 @@ npm run dist        # Windows installer → release/
 
 | What | Where |
 |---|---|
-| Database | `%APPDATA%/supportai-tether/data/tether.db` (SQLite, WAL) |
-| Backups | `%APPDATA%/supportai-tether/data/backups/` (auto before migrations + manual) |
-| Attachments | `%APPDATA%/supportai-tether/data/attachments/` (content-addressed) |
-| Settings | `%APPDATA%/supportai-tether/settings.json` (no secrets) |
+| Database | `%APPDATA%/Tether/data/tether.db` (SQLite, WAL) |
+| Backups | `%APPDATA%/Tether/data/backups/` (auto before migrations + manual) |
+| Attachments | `%APPDATA%/Tether/data/attachments/` (content-addressed) |
+| Settings | `%APPDATA%/Tether/settings.json` (no secrets) |
 | Shared sync data | `<your shared folder>/ops/…` and `/blobs/…` (JSONL change files) |
 
 The app makes **no network calls of its own** — synchronization rides entirely on

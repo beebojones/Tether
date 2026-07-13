@@ -1,21 +1,26 @@
 # Security Review Document — Tether
 
-*For McKesson security / IT reviewers. Last updated 2026-07-12.*
+*For security / IT reviewers evaluating Tether in any environment. Last updated 2026-07-12.*
+
+**Ownership:** Tether is independent software, the personal intellectual property of
+John Crouch. It is not affiliated with, sponsored by, or endorsed by any employer or
+third party. Enterprise names appearing in sample data or project records are content
+managed *by* the application, not part of the application's identity.
 
 ## What data is stored
 
-Project-management records for the Support AI initiative: work items, requirements,
-decisions, risks, blockers, access-request tracking (metadata about access — never
-credentials), meeting notes, comments, attachments, and change history. No PHI, no
-customer data, no credentials are intended or required to be stored.
+Project-management records for whatever projects the users create (work items,
+requirements, decisions, risks, blockers, access-request tracking — metadata about
+access, never credentials — meeting notes, comments, attachments, change history).
+No PHI, no customer data, no credentials are intended or required to be stored.
 
 ## Where it is stored
 
-- **Local:** SQLite database at `%APPDATA%/supportai-tether/data/tether.db`
-  on each user's McKesson-managed machine. Backups in `data/backups/`.
+- **Local:** SQLite database at `%APPDATA%/Tether/data/tether.db`
+  on each user's machine. Backups in `data/backups/`.
 - **Shared (only when sync is configured):** JSON change files and attachment blobs
-  in a OneDrive/SharePoint-synced folder chosen by the users — i.e., inside the
-  McKesson Microsoft 365 tenant, inheriting its encryption at rest, DLP, retention,
+  in a folder the users choose — typically one synced by OneDrive/SharePoint, in
+  which case the data inherits that tenant's encryption at rest, DLP, retention,
   and audit controls.
 - **Nowhere else.** The application makes **zero network calls of its own** — no
   telemetry, no analytics, no update pings, no external APIs, no AI services.
@@ -24,8 +29,8 @@ customer data, no credentials are intended or required to be stored.
 ## How it is transmitted
 
 The app itself performs no transmission. It reads/writes files in a local folder;
-Microsoft's sync client moves them within the tenant (TLS in transit, AES at rest,
-per Microsoft 365 platform guarantees).
+the folder's sync client (e.g. OneDrive) moves them (TLS in transit, AES at rest,
+per that platform's guarantees).
 
 ## Who can access it
 
@@ -54,14 +59,17 @@ Electron, React, better-sqlite3, zustand, lucide-react, TipTap (editor), Vite/es
 - No secrets exist in the app; nothing sensitive is logged; settings file contains
   only display identity, theme, and the sync folder path.
 
-## What requires McKesson approval (honest list)
+## What may require approval in a managed environment (honest list)
+
+If Tether is run on employer-managed machines, the *operators* should expect these
+items to need their organization's sign-off (nothing here is claimed pre-approved):
 
 | Item | Status |
 |---|---|
-| Running an unsigned internal tool on managed machines | May require exception/allowlisting depending on endpoint policy |
-| A shared OneDrive/SharePoint folder for the two users | Standard M365 sharing — normally self-service |
-| Any future Azure SQL / internal API sync backend | Requires provisioning + security review |
-| Any future AI-assisted features (summarization etc.) | **Not implemented**; would require approved tenant AI service first |
+| Running an unsigned third-party tool on managed machines | May require exception/allowlisting depending on endpoint policy |
+| A shared OneDrive/SharePoint folder between the two users | Standard M365 sharing — normally self-service |
+| Any future hosted sync backend (e.g. Azure SQL, internal API) | Requires provisioning + security review by that organization |
+| Any future AI-assisted features (summarization etc.) | **Not implemented**; would require an approved AI service first |
 | Code signing certificate for the installer | Recommended before broad distribution |
 
 ## Remaining risks
@@ -77,6 +85,6 @@ Electron, React, better-sqlite3, zustand, lucide-react, TipTap (editor), Vite/es
 ## How to review
 
 Everything is local and inspectable: source in this repo; runtime files under
-`%APPDATA%/supportai-tether/`; sync artifacts are human-readable JSONL. Run
+`%APPDATA%/Tether/`; sync artifacts are human-readable JSONL. Run
 `npm test` for the data-safety test suite (corruption quarantine, conflict handling,
 offline queueing).

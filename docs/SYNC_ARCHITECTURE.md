@@ -2,26 +2,28 @@
 
 ## Requirement
 
-John and Mark, two McKesson computers, same project, near-real-time sharing,
+Two collaborators, two computers, same project, near-real-time sharing,
 no silent overwrites, enterprise-acceptable data location, offline-safe.
+(Current deployment context: two users collaborating inside a corporate M365
+environment — but the design is environment-agnostic.)
 
 ## Options evaluated
 
 | Option | Security/data location | Approval burden | Real-time | Offline | Conflicts | Verdict |
 |---|---|---|---|---|---|---|
-| **Shared-folder op-log (OneDrive/SharePoint)** | Data stays in McKesson M365 tenant, existing DLP/audit applies | None beyond a shared folder | Near-real-time (file sync latency) | Excellent (local-first) | Handled in app (LWW + review) | **Selected v1** |
+| **Shared-folder op-log (OneDrive/SharePoint)** | Data stays in the users' M365 tenant, existing DLP/audit applies | None beyond a shared folder | Near-real-time (file sync latency) | Excellent (local-first) | Handled in app (LWW + review) | **Selected v1** |
 | Azure SQL / Azure App Service API | Tenant cloud, strong | Provisioning + security review + cost | Yes | Needs cache layer | Server-side possible | **Best production upgrade** — requires internal review |
 | Dataverse / Microsoft Lists | M365 tenant | License + env provisioning; Lists too weak for rich relational data | Moderate | Weak | Weak | Not recommended for this data model |
 | SQL Server on-prem | Internal | DBA + network access requests | Yes | Needs cache | Server-side | Viable but heavyweight for 2 users |
-| Neon / external Postgres | **Data leaves McKesson** | Unlikely approvable for internal project data | Yes | Needs cache | Yes | **Not recommended** (works for out-of-tenant demos only) |
+| Neon / external Postgres | **Data leaves the users' tenant** | Unlikely approvable for corporate project data | Yes | Needs cache | Yes | **Not recommended** (works for out-of-tenant demos only) |
 | SQLite file directly in OneDrive | n/a | None | — | — | — | **Rejected**: WAL/locking over file sync corrupts databases |
 | Git-based sync | Depends on host | GitHub Enterprise approval | Poor UX | Good | Manual | Rejected — wrong tool for app data |
 
 **Classification** (per product principles): shared-folder op-log = *technically
 possible + likely enterprise-friendly* (uses only already-approved OneDrive/SharePoint);
 Azure SQL = *requires internal review*; Neon/external SaaS = *not recommended* for
-real project data. Nothing here is claimed McKesson-**approved** — no approval
-evidence exists yet; see SECURITY.md for the review package.
+real project data. Nothing here is claimed **approved** by any organization — no
+approval evidence exists; see SECURITY.md for the review package.
 
 ## Selected design: local-first + append-only op-log over a synced folder
 
@@ -81,5 +83,5 @@ transport implementing the same five methods — zero changes to merge logic or 
 1. **Now (dev/demo/local):** local-only mode — no folder needed.
 2. **v1 production:** OneDrive/SharePoint shared folder both users can reach.
 3. **Later (if the team grows / IT prefers):** Azure SQL or internal API transport
-   after McKesson review; oplog replays into the new backend, so migration is an
-   export/import, not a rewrite.
+   after whatever review the hosting organization requires; oplog replays into the
+   new backend, so migration is an export/import, not a rewrite.

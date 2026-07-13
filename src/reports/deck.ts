@@ -168,7 +168,7 @@ export function generateDeckHtml({ items, milestones, users, preparedBy }: DeckD
   .titleslide { text-align: center; }
   .brand {
     width: 84px; height: 84px; margin: 0 auto 28px; border-radius: 22px;
-    background: linear-gradient(135deg, #6e8bff, #9b6ef2);
+    background: linear-gradient(135deg, #8b7bff, #e264b4);
     display: flex; align-items: center; justify-content: center;
     font-size: 40px; font-weight: 800; box-shadow: 0 0 60px rgba(110,139,255,0.35);
   }
@@ -190,7 +190,7 @@ export function generateDeckHtml({ items, milestones, users, preparedBy }: DeckD
   .msgrid { display: flex; flex-direction: column; gap: 34px; }
   .mshead { display: flex; justify-content: space-between; font-size: clamp(18px, 2.2vw, 24px); margin-bottom: 12px; }
   .bar { height: 12px; background: rgba(130,150,210,0.14); border-radius: 6px; overflow: hidden; }
-  .fillbar { height: 100%; background: linear-gradient(90deg, #6e8bff, #9b6ef2); border-radius: 6px; transform-origin: left; }
+  .fillbar { height: 100%; background: linear-gradient(90deg, #8b7bff, #e264b4); border-radius: 6px; transform-origin: left; }
   .current .fillbar { animation: sweep 900ms cubic-bezier(0.16,1,0.3,1) 200ms both; }
   @keyframes sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   .hud { position: fixed; bottom: 22px; right: 28px; color: #6b7692; font-size: 14px; font-family: Consolas, monospace; }

@@ -135,7 +135,7 @@ export function generateSnapshotHtml({ items, milestones, users, preparedBy }: S
 <body>
 <div class="page">
   <header>
-    <div class="kicker">McKesson · Support AI Initiative</div>
+    <div class="kicker">Support AI Initiative</div>
     <h1>Project Status Snapshot<span class="health" style="background:${health.color}">${health.label}</span></h1>
     <div class="meta">${esc(today)} · Prepared by ${esc(preparedBy)} · Generated from live project data in Tether</div>
   </header>

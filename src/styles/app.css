@@ -34,7 +34,7 @@
 .sidebar-brand .logo {
   width: 26px; height: 26px;
   border-radius: 7px;
-  background: linear-gradient(135deg, var(--accent) 0%, #9b6ef2 100%);
+  background: linear-gradient(135deg, var(--brand-from) 0%, var(--brand-to) 100%);
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 13px; color: #fff;
   box-shadow: var(--shadow-sm);

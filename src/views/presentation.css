@@ -3,8 +3,8 @@
   inset: 0;
   z-index: 500;
   background:
-    radial-gradient(1400px 700px at 15% -10%, rgba(110, 139, 255, 0.10), transparent),
-    radial-gradient(1000px 600px at 95% 110%, rgba(155, 110, 242, 0.09), transparent),
+    radial-gradient(1400px 700px at 15% -10%, rgba(139, 123, 255, 0.13), transparent),
+    radial-gradient(1000px 600px at 95% 110%, rgba(226, 100, 180, 0.09), transparent),
     var(--bg-app);
   display: flex;
   align-items: center;
@@ -39,7 +39,7 @@
   width: 74px; height: 74px;
   margin: 0 auto;
   border-radius: 20px;
-  background: linear-gradient(135deg, var(--accent) 0%, #9b6ef2 100%);
+  background: linear-gradient(135deg, var(--brand-from) 0%, var(--brand-to) 100%);
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 34px; color: #fff;
   box-shadow: var(--shadow-glow);
@@ -82,7 +82,7 @@
 .present-milestones { display: flex; flex-direction: column; gap: 26px; }
 .pm-head { display: flex; justify-content: space-between; font-size: clamp(17px, 2vw, 22px); margin-bottom: 10px; }
 .pm-track { height: 12px; background: var(--bg-raised); border-radius: 6px; overflow: hidden; }
-.pm-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #9b6ef2); border-radius: 6px; }
+.pm-fill { height: 100%; background: linear-gradient(90deg, var(--brand-from), var(--brand-to)); border-radius: 6px; }
 
 .present-nav {
   position: fixed;

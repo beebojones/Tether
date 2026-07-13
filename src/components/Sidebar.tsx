@@ -56,7 +56,7 @@ export default function Sidebar() {
         <div className="logo">T</div>
         <div>
           <div className="name">Tether</div>
-          <div className="sub">Support AI Workspace</div>
+          <div className="sub">Project Workspace</div>
         </div>
       </div>
 

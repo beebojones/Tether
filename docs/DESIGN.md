@@ -24,12 +24,15 @@
   keep readable at density; GPU cost in Electron.
 
 ### 4. Slate Pro (light-first)
-- Cool light gray + navy, Jira/Confluence-adjacent. Most familiar to McKesson
+- Cool light gray + navy, Jira/Confluence-adjacent. Most familiar to enterprise
   eyes; least distinctive; fails the "dark mode primary" requirement.
 
-**Why Meridian:** the spec demands dark-primary, premium, dense, professional, and
-"Mark and leadership immediately recognize craftsmanship" — Meridian hits all five
-with the lowest readability risk. Switching later = editing `src/styles/tokens.css`.
+**History:** Meridian was the initial working direction. **Nocturne** (violet night —
+deep indigo→violet surfaces, #8B7BFF accent, indigo→pink brand gradient, elevation
+on hover) was ratified by John on 2026-07-12 as the app default; light mode is
+explicitly out of scope. A comparison round against further dark depth directions
+is in progress — the default lives in `src/styles/tokens.css`, alternates under
+`src/styles/themes/` (browser-preview only via `?theme=`).
 
 ## Design system (implemented)
 

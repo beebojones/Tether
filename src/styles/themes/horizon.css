@@ -1,4 +1,4 @@
-/* "Horizon" — dusk gradient: cool indigo sky over a warm ember horizon line.
+/* Contender "Horizon" — dusk gradient: cool indigo sky over a warm ember horizon.
    Glass sidebar, warm/cool dual accents, the most atmospheric option. */
 :root {
   --bg-app: #0d1018;
@@ -8,20 +8,32 @@
   --bg-hover: rgba(40, 46, 68, 0.82);
   --bg-active: rgba(48, 55, 82, 0.85);
   --bg-input: rgba(13, 16, 25, 0.75);
+  --bg-overlay: rgba(7, 9, 15, 0.72);
 
   --border-subtle: rgba(140, 150, 200, 0.12);
   --border-default: rgba(150, 160, 210, 0.2);
   --border-strong: rgba(170, 175, 225, 0.32);
+  --border-focus: #7d95ff;
+
+  --text-primary: #eaedf7;
+  --text-secondary: #abb4cb;
+  --text-muted: #707a95;
+  --text-faint: #4d5570;
 
   --accent: #7d95ff;
   --accent-strong: #97abff;
   --accent-soft: rgba(125, 149, 255, 0.14);
   --accent-border: rgba(125, 149, 255, 0.38);
+  --brand-from: #7d95ff;
+  --brand-to: #f28c4c;
+
   --st-progress: #7d95ff;
   --pr-medium: #7d95ff;
+  --info-soft: rgba(125, 149, 255, 0.1);
 
   --shadow-md: 0 8px 26px rgba(2, 4, 12, 0.55);
   --shadow-lg: 0 20px 55px rgba(2, 4, 12, 0.7);
+  --shadow-glow: 0 0 0 1px var(--accent-border), 0 4px 26px rgba(125, 149, 255, 0.2);
 }
 
 body {
@@ -34,11 +46,4 @@ body {
 
 .sidebar, .dash-card, .item-table, .modal, .palette, .detail-rail, .board-col, .rich-editor {
   backdrop-filter: blur(14px);
-}
-
-.sidebar-brand .logo, .ob-logo, .present-logo {
-  background: linear-gradient(135deg, #7d95ff 0%, #f28c4c 130%) !important;
-}
-.progress-fill, .pm-fill {
-  background: linear-gradient(90deg, #7d95ff, #f28c4c) !important;
 }

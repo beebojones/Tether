@@ -1,6 +1,6 @@
 // Sample Support AI project data. Every record carries sample=1 and a [SAMPLE] title
 // marker convention is NOT used — the sample flag drives badges + one-click removal.
-// No real McKesson data: names of systems are generic, contents are illustrative.
+// No real confidential data: names of systems are generic, contents are illustrative.
 
 import type { Store } from './store';
 import type { ItemType, Priority } from '../../shared/types';

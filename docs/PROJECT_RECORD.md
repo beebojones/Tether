@@ -2,14 +2,26 @@
 
 *Last updated: 2026-07-12*
 
+## Ownership
+
+Tether is independent software — the personal intellectual property of John Crouch,
+designed and developed entirely on his personal computer. It is not a McKesson
+application, is not affiliated with McKesson, and nothing in its identity, metadata,
+or branding implies ownership, sponsorship, endorsement, or official status by any
+organization. Enterprise names appear only as editable project content (e.g. the
+sample data) or in documentation describing the project currently being managed.
+
 ## Vision
 
-Tether is the purpose-built workspace and single source of truth for building
-McKesson's Support AI initiative. It replaces scattered chats, emails, notes, and
-spreadsheets with one fast desktop app that John and Mark share from separate
-computers — tracking work, requirements, decisions, risks, blockers, system-access
-requests, meetings, milestones, and releases, and turning all of it into
-leadership-ready updates on demand.
+Tether is a general-purpose collaborative project workspace and single source of
+truth for a small team. It replaces scattered chats, emails, notes, and spreadsheets
+with one fast desktop app shared across computers — tracking work, requirements,
+decisions, risks, blockers, system-access requests, meetings, milestones, and
+releases, and turning all of it into leadership-ready updates on demand.
+
+**First project managed in Tether:** the Support AI initiative (John + Mark).
+"Support AI" is project content, not application identity — Tether stays reusable
+for future projects.
 
 ## Users
 
@@ -132,5 +144,5 @@ npm test             # data-layer + sync tests
 npm run dist         # NSIS installer into release/
 ```
 
-Data lives in `%APPDATA%/supportai-tether/data/tether.db` (per user), backups in
+Data lives in `%APPDATA%/Tether/data/tether.db` (per user), backups in
 `data/backups/`, settings in `settings.json` alongside.

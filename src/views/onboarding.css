@@ -4,8 +4,8 @@
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(1200px 600px at 20% -10%, rgba(110, 139, 255, 0.09), transparent),
-    radial-gradient(900px 500px at 90% 110%, rgba(155, 110, 242, 0.08), transparent),
+    radial-gradient(1200px 600px at 20% -10%, rgba(139, 123, 255, 0.12), transparent),
+    radial-gradient(900px 500px at 90% 110%, rgba(226, 100, 180, 0.08), transparent),
     var(--bg-app);
 }
 
@@ -22,7 +22,7 @@
 .ob-logo {
   width: 44px; height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent) 0%, #9b6ef2 100%);
+  background: linear-gradient(135deg, var(--brand-from) 0%, var(--brand-to) 100%);
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 20px; color: #fff;
   margin-bottom: 18px;

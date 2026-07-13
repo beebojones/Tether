@@ -76,7 +76,7 @@ if (!gotLock) {
       dialog.showErrorBox(
         'Tether could not start',
         (err instanceof Error ? err.message : String(err)) +
-          '\n\nYour data folder is %APPDATA%/supportai-tether/data — backups live in its backups/ subfolder.',
+          '\n\nYour data folder is %APPDATA%/Tether/data — backups live in its backups/ subfolder.',
       );
       app.quit();
     }

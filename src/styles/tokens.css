@@ -1,51 +1,56 @@
-/* Keystone design tokens — direction "Meridian": deep neutral surfaces, indigo accent,
-   high information density, subtle depth. Dark is the primary theme. */
+/* Tether design tokens — direction "Nocturne" (ratified by John, 2026-07-12):
+   violet night. Deep indigo→violet surfaces, ambient wash, elevation on hover,
+   indigo→pink brand moments. Dark is the only theme; high information density. */
 
 :root {
   /* Surfaces (dark) */
-  --bg-app: #0d1017;
-  --bg-sidebar: #10141d;
-  --bg-panel: #141926;
-  --bg-raised: #1a2030;
-  --bg-hover: #1e2536;
-  --bg-active: #232b3f;
-  --bg-input: #11151f;
-  --bg-overlay: rgba(9, 11, 16, 0.72);
+  --bg-app: #0d0b16;
+  --bg-sidebar: #131020;
+  --bg-panel: #171329;
+  --bg-raised: #1f1a36;
+  --bg-hover: #262040;
+  --bg-active: #2e274e;
+  --bg-input: #110e1e;
+  --bg-overlay: rgba(8, 5, 18, 0.74);
 
   /* Borders */
-  --border-subtle: #1f2636;
-  --border-default: #283148;
-  --border-strong: #364060;
-  --border-focus: #6e8bff;
+  --border-subtle: #241e3c;
+  --border-default: #2f2850;
+  --border-strong: #423a6e;
+  --border-focus: #8b7bff;
 
   /* Text */
-  --text-primary: #e8ecf6;
-  --text-secondary: #a8b2c9;
-  --text-muted: #6b7692;
-  --text-faint: #4a5470;
-  --text-invert: #0d1017;
+  --text-primary: #ece9f8;
+  --text-secondary: #b3accd;
+  --text-muted: #7d7599;
+  --text-faint: #554f70;
+  --text-invert: #0d0b16;
 
   /* Accent */
-  --accent: #6e8bff;
-  --accent-strong: #85a2ff;
-  --accent-soft: rgba(110, 139, 255, 0.14);
-  --accent-border: rgba(110, 139, 255, 0.38);
+  --accent: #8b7bff;
+  --accent-strong: #a495ff;
+  --accent-soft: rgba(139, 123, 255, 0.15);
+  --accent-border: rgba(139, 123, 255, 0.4);
+
+  /* Brand gradient endpoints (logo, progress fills, hero moments) */
+  --brand-from: #8b7bff;
+  --brand-to: #e264b4;
 
   /* Status */
-  --st-backlog: #6b7692;
-  --st-todo: #a8b2c9;
-  --st-progress: #6e8bff;
-  --st-review: #b784f2;
+  --st-backlog: #7d7599;
+  --st-todo: #b3accd;
+  --st-progress: #8b7bff;
+  --st-review: #c084f2;
   --st-blocked: #f2647c;
   --st-done: #4cc38a;
-  --st-cancelled: #565f78;
+  --st-cancelled: #5c5578;
   --st-warning: #f2b04c;
 
   /* Priority */
   --pr-urgent: #f2647c;
   --pr-high: #f2b04c;
-  --pr-medium: #6e8bff;
-  --pr-low: #6b7692;
+  --pr-medium: #8b7bff;
+  --pr-low: #7d7599;
 
   /* Semantic */
   --danger: #f2647c;
@@ -54,7 +59,7 @@
   --success-soft: rgba(76, 195, 138, 0.12);
   --warning: #f2b04c;
   --warning-soft: rgba(242, 176, 76, 0.12);
-  --info-soft: rgba(110, 139, 255, 0.1);
+  --info-soft: rgba(139, 123, 255, 0.1);
 
   /* Typography */
   --font-ui: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -82,11 +87,11 @@
   --r-lg: 12px;
   --r-full: 999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 0 0 1px var(--accent-border), 0 4px 24px rgba(110, 139, 255, 0.18);
+  /* Shadows (deeper than Meridian — Nocturne trades on elevation) */
+  --shadow-sm: 0 2px 6px rgba(6, 3, 16, 0.5);
+  --shadow-md: 0 8px 26px rgba(6, 3, 16, 0.6);
+  --shadow-lg: 0 20px 60px rgba(6, 3, 16, 0.75);
+  --shadow-glow: 0 0 0 1px var(--accent-border), 0 4px 30px rgba(139, 123, 255, 0.24);
 
   /* Motion */
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);

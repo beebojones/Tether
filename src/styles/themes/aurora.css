@@ -1,5 +1,5 @@
-/* Theme variant "Aurora Glass" — translucent layered panels, teal→violet accents,
-   ambient glow. Preview-only override of the Meridian tokens. */
+/* Contender "Aurora" — teal→violet glass: translucent layered panels over an
+   aurora wash, cyan accent, the most luminous option. */
 :root {
   --bg-app: #0a0d16;
   --bg-sidebar: rgba(18, 22, 36, 0.72);
@@ -15,10 +15,17 @@
   --border-strong: rgba(140, 160, 220, 0.34);
   --border-focus: #5eead4;
 
+  --text-primary: #e9f0f5;
+  --text-secondary: #a9b6c9;
+  --text-muted: #6e7c92;
+  --text-faint: #4c5870;
+
   --accent: #5eead4;
   --accent-strong: #8ff5e4;
   --accent-soft: rgba(94, 234, 212, 0.13);
   --accent-border: rgba(94, 234, 212, 0.36);
+  --brand-from: #5eead4;
+  --brand-to: #9b6ef2;
 
   --st-progress: #5eead4;
   --pr-medium: #5eead4;
@@ -34,14 +41,8 @@ body {
     var(--bg-app) !important;
 }
 
-.sidebar, .dash-card, .item-table, .modal, .palette, .detail-rail, .board-col {
+.sidebar, .dash-card, .item-table, .modal, .palette, .detail-rail, .board-col, .rich-editor {
   backdrop-filter: blur(14px);
 }
 
-.sidebar-brand .logo, .ob-logo, .present-logo {
-  background: linear-gradient(135deg, #5eead4 0%, #9b6ef2 100%) !important;
-}
-.progress-fill, .pm-fill {
-  background: linear-gradient(90deg, #5eead4, #9b6ef2) !important;
-}
 button.primary { color: #06251f !important; }

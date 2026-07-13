@@ -47,7 +47,7 @@ export default function Onboarding() {
       <div className="ob-card">
         <div className="ob-logo">T</div>
         <h1>Welcome to Tether</h1>
-        <p className="muted">The workspace for the Support AI project. Set up your identity to begin.</p>
+        <p className="muted">Your shared project workspace. Set up your identity to begin.</p>
 
         <div className="form-row" style={{ marginTop: 24 }}>
           <label htmlFor="ob-name">Who are you?</label>

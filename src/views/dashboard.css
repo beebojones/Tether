@@ -9,9 +9,10 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-lg);
   overflow: hidden;
-  transition: border-color var(--t-fast) var(--ease);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
 }
-.dash-card:hover { border-color: var(--border-default); }
+.dash-card:hover { border-color: var(--border-default); box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .dash-card.wide { grid-column: 1 / -1; }
 .dash-card.danger .dash-card-head { color: var(--danger); }
 .dash-card.warning .dash-card-head { color: var(--warning); }
@@ -82,6 +83,6 @@
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #9b6ef2);
+  background: linear-gradient(90deg, var(--brand-from), var(--brand-to));
   border-radius: 3px;
 }

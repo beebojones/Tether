@@ -45,7 +45,7 @@ as the project data:
 ## Rollback
 
 Reinstall the previous installer from `releases/<version>/`, then restore the newest
-matching backup from `%APPDATA%/supportai-tether/data/backups/` if a migration had
+matching backup from `%APPDATA%/Tether/data/backups/` if a migration had
 already run.
 
 ## Release checklist
@@ -57,7 +57,7 @@ already run.
 - [ ] Dependency audit: `npm audit` reviewed; Electron on a supported major
 - [ ] Release notes written; hash published alongside installer
 
-## Future (requires McKesson infrastructure)
+## Future (requires signing / deployment infrastructure)
 
 - Code-signing certificate → removes SmartScreen friction, enables Intune/Software
   Center distribution.

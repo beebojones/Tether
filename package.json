@@ -1,8 +1,8 @@
 {
-  "name": "supportai-tether",
+  "name": "tether",
   "productName": "Tether",
   "version": "0.1.0",
-  "description": "Purpose-built project workspace for the McKesson Support AI initiative",
+  "description": "Tether — collaborative project workspace. Local-first, folder-based sync, leadership reporting.",
   "main": "dist-electron/main.js",
   "private": true,
   "author": "John Crouch",
@@ -60,8 +60,9 @@
     "vite": "^7.0.0"
   },
   "build": {
-    "appId": "com.mckesson.supportai.tether",
+    "appId": "com.beebojones.tether",
     "productName": "Tether",
+    "copyright": "Copyright © 2026 John Crouch",
     "directories": {
       "output": "release"
     },

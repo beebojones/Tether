@@ -1,5 +1,5 @@
-/* "Meridian Depth" — Meridian's indigo identity + Aurora's glass and ambient light.
-   Layered background wash, translucent panels, elevation, soft brand glow. */
+/* Contender "Meridian Depth" — the original engineering-indigo identity plus glass
+   and ambient light. Cool blue-black, indigo accent, translucent panels. */
 :root {
   --bg-app: #0b0e17;
   --bg-sidebar: rgba(17, 21, 34, 0.78);
@@ -8,14 +8,34 @@
   --bg-hover: rgba(39, 47, 74, 0.8);
   --bg-active: rgba(47, 57, 90, 0.85);
   --bg-input: rgba(13, 16, 26, 0.75);
+  --bg-overlay: rgba(7, 9, 16, 0.72);
 
   --border-subtle: rgba(122, 140, 200, 0.12);
   --border-default: rgba(132, 152, 214, 0.2);
   --border-strong: rgba(142, 162, 224, 0.32);
+  --border-focus: #6e8bff;
+
+  --text-primary: #e8ecf6;
+  --text-secondary: #a8b2c9;
+  --text-muted: #6b7692;
+  --text-faint: #4a5470;
+
+  --accent: #6e8bff;
+  --accent-strong: #85a2ff;
+  --accent-soft: rgba(110, 139, 255, 0.14);
+  --accent-border: rgba(110, 139, 255, 0.38);
+  --brand-from: #6e8bff;
+  --brand-to: #9b6ef2;
+
+  --st-progress: #6e8bff;
+  --st-review: #b784f2;
+  --pr-medium: #6e8bff;
+  --info-soft: rgba(110, 139, 255, 0.1);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 6px 22px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(110, 139, 255, 0.06);
   --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(110, 139, 255, 0.08);
+  --shadow-glow: 0 0 0 1px var(--accent-border), 0 4px 24px rgba(110, 139, 255, 0.18);
 }
 
 body {
@@ -29,6 +49,3 @@ body {
 .sidebar, .dash-card, .item-table, .modal, .palette, .detail-rail, .board-col, .rich-editor {
   backdrop-filter: blur(16px);
 }
-
-.dash-card, .item-table { box-shadow: var(--shadow-sm); }
-.dash-card:hover { box-shadow: var(--shadow-md); }
