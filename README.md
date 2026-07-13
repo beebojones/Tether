@@ -22,6 +22,10 @@ npm run dist        # Windows installer → release/
 
 ## Walkthrough
 
+Open the hosted walkthrough from any device:
+
+<https://chroma-walkthrough.vercel.app/tether/>
+
 The product walkthrough is a static HTML presentation in
 [`docs/walkthrough/index.html`](docs/walkthrough/index.html).
 
