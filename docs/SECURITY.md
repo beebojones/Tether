@@ -23,8 +23,11 @@ No PHI, no customer data, no credentials are intended or required to be stored.
   which case the data inherits that tenant's encryption at rest, DLP, retention,
   and audit controls.
 - **Nowhere else.** The application makes **zero network calls of its own** — no
-  telemetry, no analytics, no update pings, no external APIs, no AI services.
-  Transport security is entirely delegated to the OneDrive/SharePoint client.
+  telemetry, no analytics, no external APIs, no AI services, and no over-the-internet
+  update fetch. The in-app update check reads the shared release folder from the
+  local disk (the same folder the OneDrive/SharePoint client already syncs) and
+  verifies the installer's SHA256 before it will run it. Transport security is
+  entirely delegated to the OneDrive/SharePoint client.
 
 ## How it is transmitted
 

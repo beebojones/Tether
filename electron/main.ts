@@ -7,6 +7,7 @@ import { FolderTransport } from './sync/transport';
 import { AttachmentManager } from './attachments';
 import { Settings } from './settings';
 import { registerIpc } from './ipc';
+import { checkForUpdates } from './updater';
 
 let win: BrowserWindow | null = null;
 
@@ -107,6 +108,16 @@ if (!gotLock) {
     registerIpc({ ctx, store, sync, attachments, settings, getWindow: () => win });
 
     createWindow();
+
+    // Silent startup check against the shared release folder (packaged only).
+    // Reads the OneDrive/SharePoint-synced folder from disk — no network calls.
+    if (app.isPackaged && syncFolder) {
+      win?.webContents.once('did-finish-load', () => {
+        setTimeout(() => {
+          void checkForUpdates(win, syncFolder, app.getVersion(), { interactive: false });
+        }, 2500);
+      });
+    }
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();

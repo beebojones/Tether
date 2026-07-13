@@ -188,6 +188,7 @@ export function installDevMock(): void {
     app: {
       info: async () => ({ version: '0.1.0-browser-preview', dataDir: '(browser preview — no disk)', dbPath: '(browser preview)', deviceId: 'preview-device' }),
       backup: async () => '(browser preview — backup unavailable)',
+      checkUpdate: async () => ({ status: 'up-to-date' as const, current: '0.1.0-browser-preview' }),
     },
     settings: {
       get: async () => ({

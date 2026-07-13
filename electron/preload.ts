@@ -7,6 +7,7 @@ const api = {
   app: {
     info: () => invoke('app:info'),
     backup: () => invoke('app:backup'),
+    checkUpdate: () => invoke('app:checkUpdate'),
   },
   settings: {
     get: () => invoke('settings:get'),

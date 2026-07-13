@@ -12,6 +12,13 @@ export interface AppInfo {
   deviceId: string;
 }
 
+export type CheckResult =
+  | { status: 'no-folder' }
+  | { status: 'up-to-date'; current: string }
+  | { status: 'update-available'; version: string }
+  | { status: 'installing'; version: string }
+  | { status: 'error'; message: string };
+
 export interface UserIdentity {
   id: string;
   name: string;
@@ -34,7 +41,7 @@ export interface LinkedItem {
 }
 
 interface Bridge {
-  app: { info(): Promise<AppInfo>; backup(): Promise<string> };
+  app: { info(): Promise<AppInfo>; backup(): Promise<string>; checkUpdate(): Promise<CheckResult> };
   settings: {
     get(): Promise<AppSettings>;
     set(p: Partial<AppSettings>): Promise<AppSettings>;

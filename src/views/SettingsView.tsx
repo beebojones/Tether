@@ -33,6 +33,16 @@ export default function SettingsView() {
     flash('Sync disabled — working local-only. Your data stays on this computer.');
   };
 
+  // Main process shows native dialogs for every outcome (up to date, prompt to
+  // install, verification failure). We just trigger it and surface a light note.
+  const checkForUpdates = async () => {
+    flash('Checking the shared folder for updates…');
+    const res = await api.app.checkUpdate();
+    if (res.status === 'up-to-date') flash(`You're on the latest version (${res.current}).`);
+    else if (res.status === 'no-folder') flash('Configure a shared folder to receive updates.');
+    else setMsg(null);
+  };
+
   return (
     <div className="view-pad" style={{ maxWidth: 760 }}>
       <div className="view-header"><h1>Settings</h1></div>
@@ -119,9 +129,12 @@ export default function SettingsView() {
       </Section>
 
       <Section title="Backup & data">
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           <button onClick={() => void api.app.backup().then((p) => flash(`Backup saved: ${p}`))}>
             <Download size={14} /> Back up database now
+          </button>
+          <button onClick={() => void checkForUpdates()}>
+            <RefreshCw size={13} /> Check for updates
           </button>
         </div>
         <dl className="kv">
