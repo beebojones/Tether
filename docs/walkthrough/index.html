@@ -180,7 +180,12 @@
     h2 {
       max-width: 880px;
       margin-bottom: 22px;
-      font-size: clamp(34px, 5.2vw, 62px);
+      font-size: clamp(38px, 5.6vw, 68px);
+      font-weight: 700;
+      background: linear-gradient(92deg, #ffffff 46%, #cdc4ff 82%, var(--violet-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     h3 {
@@ -258,6 +263,16 @@
       grid-template-columns: minmax(0, 0.86fr) minmax(420px, 1.14fr);
       gap: 40px;
       align-items: center;
+    }
+
+    /* Workspace showcase: give the app screenshot more room, bigger and further right.
+       Desktop only — below 920px the base .split collapses to one column. */
+    @media (min-width: 921px) {
+      #workspace .inner.split {
+        width: min(1260px, 100%);
+        grid-template-columns: minmax(0, 0.72fr) minmax(500px, 1.42fr);
+        gap: 58px;
+      }
     }
 
     .lead { max-width: 680px; font-size: 19px; }
@@ -597,8 +612,8 @@
     }
 
     .close h2 {
-      max-width: 980px;
-      font-size: clamp(44px, 8vw, 96px);
+      max-width: 720px;
+      font-size: clamp(30px, 4.2vw, 52px);
     }
 
     .footer {
@@ -1153,30 +1168,34 @@
             <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="3s" repeatCount="indefinite"/>
           </g>
 
-          <!-- Teammates: each a private local database, color-keyed -->
+          <!-- Teammates: each a private local database. Clean blocks; identity lives on the connections. -->
           <g>
-            <rect class="n-rect" x="36" y="52" width="140" height="66" rx="14" style="stroke:rgba(139,123,255,0.5)"/>
-            <rect x="48" y="70" width="4" height="30" rx="2" fill="#8b7bff"/>
+            <rect class="n-rect" x="36" y="52" width="140" height="66" rx="14"/>
             <text class="n-label" x="106" y="82" text-anchor="middle">TEAMMATE</text>
             <text class="n-sub" x="106" y="101" text-anchor="middle">Private local database</text>
           </g>
           <g>
-            <rect class="n-rect" x="584" y="52" width="140" height="66" rx="14" style="stroke:rgba(110,215,255,0.5)"/>
-            <rect x="596" y="70" width="4" height="30" rx="2" fill="#6ed7ff"/>
+            <rect class="n-rect" x="584" y="52" width="140" height="66" rx="14"/>
             <text class="n-label" x="654" y="82" text-anchor="middle">TEAMMATE</text>
             <text class="n-sub" x="654" y="101" text-anchor="middle">Private local database</text>
           </g>
           <g>
-            <rect class="n-rect" x="36" y="322" width="140" height="66" rx="14" style="stroke:rgba(76,195,138,0.5)"/>
-            <rect x="48" y="340" width="4" height="30" rx="2" fill="#4cc38a"/>
+            <rect class="n-rect" x="36" y="322" width="140" height="66" rx="14"/>
             <text class="n-label" x="106" y="352" text-anchor="middle">TEAMMATE</text>
             <text class="n-sub" x="106" y="371" text-anchor="middle">Private local database</text>
           </g>
           <g>
-            <rect class="n-rect" x="584" y="322" width="140" height="66" rx="14" style="stroke:rgba(192,132,242,0.5)"/>
-            <rect x="596" y="340" width="4" height="30" rx="2" fill="#c084f2"/>
+            <rect class="n-rect" x="584" y="322" width="140" height="66" rx="14"/>
             <text class="n-label" x="654" y="352" text-anchor="middle">TEAMMATE</text>
             <text class="n-sub" x="654" y="371" text-anchor="middle">Private local database</text>
+          </g>
+
+          <!-- Logo echo: a node where each taut line meets its teammate. Small node + line + hub node = the Tether "bond", repeated four times. -->
+          <g class="ports">
+            <circle cx="182" cy="123" r="8" fill="none" stroke="#8b7bff" stroke-opacity="0.4" stroke-width="1.4"/><circle cx="182" cy="123" r="4.5" fill="#8b7bff"/>
+            <circle cx="578" cy="123" r="8" fill="none" stroke="#6ed7ff" stroke-opacity="0.4" stroke-width="1.4"/><circle cx="578" cy="123" r="4.5" fill="#6ed7ff"/>
+            <circle cx="182" cy="317" r="8" fill="none" stroke="#4cc38a" stroke-opacity="0.4" stroke-width="1.4"/><circle cx="182" cy="317" r="4.5" fill="#4cc38a"/>
+            <circle cx="578" cy="317" r="8" fill="none" stroke="#c084f2" stroke-opacity="0.4" stroke-width="1.4"/><circle cx="578" cy="317" r="4.5" fill="#c084f2"/>
           </g>
 
           <!-- Shared folder hub -->
