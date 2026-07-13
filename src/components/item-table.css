@@ -42,6 +42,18 @@
   font-size: var(--fs-md);
 }
 
+/* Light "recently changed by another person" indicator */
+.changed-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warning);
+  box-shadow: 0 0 0 3px var(--warning-soft);
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
 .due { font-size: var(--fs-xs); color: var(--text-muted); white-space: nowrap; }
 .due.overdue { color: var(--danger); font-weight: 600; }
 

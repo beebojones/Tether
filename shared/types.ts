@@ -268,6 +268,7 @@ export interface Comment {
   bodyText: string;
   createdAt: string;
   updatedAt: string | null;
+  updatedBy?: string | null;
   deleted: 0 | 1;
 }
 
@@ -313,6 +314,10 @@ export interface Milestone {
   status: 'planned' | 'active' | 'done';
   sort: number;
   sample: 0 | 1;
+  createdAt?: string;
+  createdBy?: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface Release {
@@ -324,6 +329,10 @@ export interface Release {
   goals: string;
   notes: string; // release notes rich doc
   sample: 0 | 1;
+  createdAt?: string;
+  createdBy?: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 export interface User {

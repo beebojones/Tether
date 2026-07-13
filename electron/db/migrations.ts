@@ -258,4 +258,51 @@ CREATE TABLE pending_ops (
 CREATE INDEX idx_pending_entity ON pending_ops(entity, entity_id);
 `,
   },
+  {
+    version: 3,
+    name: 'full-auditability',
+    sql: `
+-- Every user-data table gets created/updated attribution and soft-delete
+-- attribution so "who created/changed/deleted this, and when" is always answerable
+-- from the schema, not just the op log.
+
+-- Milestones + releases had no audit columns at all.
+ALTER TABLE milestones ADD COLUMN created_at TEXT NOT NULL DEFAULT '';
+ALTER TABLE milestones ADD COLUMN created_by TEXT NOT NULL DEFAULT '';
+ALTER TABLE milestones ADD COLUMN updated_at TEXT NOT NULL DEFAULT '';
+ALTER TABLE milestones ADD COLUMN updated_by TEXT NOT NULL DEFAULT '';
+ALTER TABLE releases ADD COLUMN created_at TEXT NOT NULL DEFAULT '';
+ALTER TABLE releases ADD COLUMN created_by TEXT NOT NULL DEFAULT '';
+ALTER TABLE releases ADD COLUMN updated_at TEXT NOT NULL DEFAULT '';
+ALTER TABLE releases ADD COLUMN updated_by TEXT NOT NULL DEFAULT '';
+
+-- Comment edits/deletes were unattributed.
+ALTER TABLE comments ADD COLUMN updated_by TEXT;
+ALTER TABLE comments ADD COLUMN deleted_at TEXT;
+ALTER TABLE comments ADD COLUMN deleted_by TEXT;
+
+-- Attachment removal was unattributed.
+ALTER TABLE attachments ADD COLUMN deleted_at TEXT;
+ALTER TABLE attachments ADD COLUMN deleted_by TEXT;
+
+-- Link removal attribution on the row (not only in the activity feed).
+ALTER TABLE links ADD COLUMN deleted_at TEXT;
+ALTER TABLE links ADD COLUMN deleted_by TEXT;
+
+-- Saved view / item delete attribution on the row.
+ALTER TABLE saved_views ADD COLUMN updated_at TEXT;
+ALTER TABLE saved_views ADD COLUMN updated_by TEXT;
+ALTER TABLE saved_views ADD COLUMN deleted_at TEXT;
+ALTER TABLE saved_views ADD COLUMN deleted_by TEXT;
+ALTER TABLE items ADD COLUMN deleted_at TEXT;
+ALTER TABLE items ADD COLUMN deleted_by TEXT;
+
+-- Who resolved a sync conflict.
+ALTER TABLE sync_conflicts ADD COLUMN resolved_by TEXT;
+
+-- Backfill existing milestone/release rows so audit timestamps are never blank.
+UPDATE milestones SET created_at = datetime('now'), updated_at = datetime('now') WHERE created_at = '';
+UPDATE releases SET created_at = datetime('now'), updated_at = datetime('now') WHERE created_at = '';
+`,
+  },
 ];

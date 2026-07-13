@@ -15,7 +15,12 @@ export default function ItemTable({ items, groupBy = 'none', emptyText }: {
   groupBy?: GroupBy;
   emptyText?: string;
 }) {
-  const { openItem, users, milestones } = useApp();
+  const { openItem, users, milestones, settings } = useApp();
+  const myId = settings?.currentUser?.id ?? null;
+  // A row is "changed by someone else" if the last editor isn't me and it happened recently.
+  const changedByOther = (it: WorkItem) =>
+    !!it.updatedBy && it.updatedBy !== myId && it.createdAt !== it.updatedAt &&
+    Date.now() - new Date(it.updatedAt).getTime() < 3 * 864e5;
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const groups = useMemo(() => {
@@ -79,6 +84,9 @@ export default function ItemTable({ items, groupBy = 'none', emptyText }: {
                 <span className="ident">{it.ident}</span>
                 <span className="item-title">
                   {it.title}
+                  {changedByOther(it) && (
+                    <span className="changed-dot" title={`Recently changed by ${users.find((u) => u.id === it.updatedBy)?.name ?? it.updatedBy}`} />
+                  )}
                   {it.sample === 1 && <span className="sample-badge" style={{ marginLeft: 8 }}>SAMPLE</span>}
                 </span>
                 {it.dueDate && (

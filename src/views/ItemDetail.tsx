@@ -29,6 +29,7 @@ export default function ItemDetail({ id }: { id: string }) {
   const [selectionText, setSelectionText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [diffEntry, setDiffEntry] = useState<ActivityEntry | null>(null);
   // Bumped when body content is replaced from outside the editor (version restore,
   // conflict resolution) — forces the editor to remount with the new content.
   const [editorEpoch, setEditorEpoch] = useState(0);
@@ -89,6 +90,8 @@ export default function ItemDetail({ id }: { id: string }) {
         </div>
 
         <TitleEditor key={item.id + ':t'} value={item.title} onSave={(title) => title.trim() && update({ title: title.trim() })} />
+
+        <EditedChip item={item} currentUserId={settings?.currentUser?.id ?? null} onClick={() => setTab('activity')} />
 
         <RichEditor
           key={`${item.id}:b:${editorEpoch}`}
@@ -159,7 +162,7 @@ export default function ItemDetail({ id }: { id: string }) {
             </button>
           </div>
           {tab === 'comments' && <Comments itemId={id} comments={comments} onChanged={reload} />}
-          {tab === 'activity' && <ActivityList entries={activity} />}
+          {tab === 'activity' && <ActivityList entries={activity} onOpenDiff={setDiffEntry} />}
           {tab === 'versions' && (
             <VersionList
               versions={versions}
@@ -240,11 +243,67 @@ export default function ItemDetail({ id }: { id: string }) {
         >
           <p style={{ fontSize: 'var(--fs-sm)' }}>
             <strong>{item.ident} — {item.title}</strong> will be removed from all views and lists.
-            Its history remains in the change log. Consider archiving instead if you may need it later.
+            It is only soft-deleted: the record stays in the database file and its full history
+            remains in the change log. Consider archiving instead if you may need it back in the UI.
           </p>
         </Modal>
       )}
+      {diffEntry && <ChangeDiff entry={diffEntry} onClose={() => setDiffEntry(null)} />}
     </div>
+  );
+}
+
+/** Slim "last edited by X · when" line under the title. Highlighted amber when the
+    last editor is someone other than the current viewer, so cross-user changes stand out. */
+function EditedChip({ item, currentUserId, onClick }: { item: WorkItem; currentUserId: string | null; onClick: () => void }) {
+  const users = useApp((s) => s.users);
+  const editor = userById(users, item.updatedBy);
+  const byOther = !!item.updatedBy && item.updatedBy !== currentUserId;
+  const recent = Date.now() - new Date(item.updatedAt).getTime() < 3 * 864e5;
+  const flag = byOther && recent;
+  const created = item.createdAt !== item.updatedAt;
+  return (
+    <button
+      className="edited-chip"
+      onClick={onClick}
+      title="Open the activity log for this item"
+      style={flag ? { color: 'var(--warning)', background: 'var(--warning-soft)', borderColor: 'rgba(242,176,76,0.35)' } : undefined}
+    >
+      {flag && <span className="edited-dot" />}
+      {created
+        ? <>Edited by <strong>{editor?.name ?? item.updatedBy}</strong> · {fmtDateTime(item.updatedAt)}</>
+        : <>Created by <strong>{editor?.name ?? item.updatedBy}</strong> · {fmtDateTime(item.createdAt)}</>}
+    </button>
+  );
+}
+
+/** An activity entry has a viewable before/after when it carries changed values. */
+export function activityHasDiff(a: ActivityEntry): boolean {
+  return (a.kind === 'updated' || a.kind === 'edited') && (a.oldValue != null || a.newValue != null);
+}
+
+/** Before/after diff for a single change (field update, body edit, comment change). */
+export function ChangeDiff({ entry, onClose }: { entry: ActivityEntry; onClose: () => void }) {
+  const users = useApp((s) => s.users);
+  const isBody = entry.field === 'body' || entry.kind === 'edited';
+  const before = isBody ? docToText(entry.oldValue ?? '') : (entry.oldValue ?? '');
+  const after = isBody ? docToText(entry.newValue ?? '') : (entry.newValue ?? '');
+  return (
+    <Modal title={`Change · ${describeActivity(entry, users)}`} onClose={onClose} width={760}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div>
+          <div className="rail-label" style={{ color: 'var(--danger)' }}>Before</div>
+          <div className="version-pane diff-before">{before || <span className="muted">(empty)</span>}</div>
+        </div>
+        <div>
+          <div className="rail-label" style={{ color: 'var(--success)' }}>After</div>
+          <div className="version-pane diff-after">{after || <span className="muted">(empty)</span>}</div>
+        </div>
+      </div>
+      <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 10 }}>
+        Recorded {fmtDateTime(entry.at)}. Older field values are truncated in the log; use version snapshots for full body history.
+      </p>
+    </Modal>
   );
 }
 
@@ -381,17 +440,34 @@ function Comments({ itemId, comments, onChanged }: { itemId: string; comments: C
   );
 }
 
-function ActivityList({ entries }: { entries: ActivityEntry[] }) {
+/** An activity entry has a viewable before/after when it carries changed values. */
+function hasDiff(a: ActivityEntry): boolean {
+  return (a.kind === 'updated' || a.kind === 'edited') && (a.oldValue != null || a.newValue != null);
+}
+
+function ActivityList({ entries, onOpenDiff }: { entries: ActivityEntry[]; onOpenDiff: (a: ActivityEntry) => void }) {
   const users = useApp((s) => s.users);
   return (
     <div>
       {entries.length === 0 && <div className="muted" style={{ fontSize: 'var(--fs-sm)' }}>No activity recorded.</div>}
-      {entries.map((a) => (
-        <div key={a.id} className="activity-row">
-          <span className="muted" style={{ fontSize: 'var(--fs-xs)', whiteSpace: 'nowrap' }}>{fmtDateTime(a.at)}</span>
-          <span style={{ fontSize: 'var(--fs-sm)' }}>{describeActivity(a, users)}</span>
-        </div>
-      ))}
+      {entries.map((a) => {
+        const diff = hasDiff(a);
+        return (
+          <div
+            key={a.id}
+            className={`activity-row ${diff ? 'has-diff' : ''}`}
+            onClick={diff ? () => onOpenDiff(a) : undefined}
+            role={diff ? 'button' : undefined}
+            tabIndex={diff ? 0 : undefined}
+            onKeyDown={diff ? (e) => e.key === 'Enter' && onOpenDiff(a) : undefined}
+            title={diff ? 'View before / after' : undefined}
+          >
+            <span className="muted" style={{ fontSize: 'var(--fs-xs)', whiteSpace: 'nowrap' }}>{fmtDateTime(a.at)}</span>
+            <span style={{ fontSize: 'var(--fs-sm)' }}>{describeActivity(a, users)}</span>
+            {diff && <span className="diff-tag">before / after</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -408,6 +484,15 @@ export function describeActivity(a: ActivityEntry, users: { id: string; name: st
     case 'archived': return `${who} archived this item`;
     case 'restored': return `${who} restored this item`;
     case 'deleted': return `${who} deleted this item`;
+    case 'comment_edited': return `${who} edited a comment`;
+    case 'comment_deleted': return `${who} deleted a comment`;
+    case 'attachment_added': return `${who} attached "${trunc(a.newValue ?? '', 40)}"`;
+    case 'attachment_removed': return `${who} removed attachment "${trunc(a.oldValue ?? '', 40)}"`;
+    case 'milestone_created': return `${who} created milestone "${trunc(a.newValue ?? '', 40)}"`;
+    case 'milestone_updated': return `${who} updated milestone "${trunc(a.newValue ?? '', 40)}"`;
+    case 'release_created': return `${who} created release "${trunc(a.newValue ?? '', 40)}"`;
+    case 'release_updated': return `${who} updated release "${trunc(a.newValue ?? '', 40)}"`;
+    case 'view_deleted': return `${who} deleted saved view "${trunc(a.oldValue ?? '', 40)}"`;
     case 'renumbered': return `Item renumbered from ${a.oldValue} to ${a.newValue} after a sync collision`;
     default: return `${who} — ${a.kind}`;
   }

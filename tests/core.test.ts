@@ -275,3 +275,48 @@ test('out-of-order remote ops: set/delete arriving before create are buffered, n
 
   a.ctx.db.close();
 });
+
+test('auditability: milestones/releases carry created+updated attribution and log activity', () => {
+  const { ctx, store } = mkStore('audit-ms', 'john');
+  const m = store.upsertMilestone({ name: 'Discovery' });
+  const row = ctx.db.prepare('SELECT created_at, created_by, updated_at, updated_by FROM milestones WHERE id=?').get(m.id) as Record<string, string>;
+  assert.ok(row.created_at && row.created_by === 'john' && row.updated_at && row.updated_by === 'john');
+  const act = store.activityFor(null, 50) as { kind: string; newValue: string | null }[];
+  assert.ok(act.some((a) => a.kind === 'milestone_created' && a.newValue === 'Discovery'));
+
+  // Update by a different actor -> updated_by changes, activity logged.
+  store.actorId = 'mark';
+  store.upsertMilestone({ id: m.id, name: 'Discovery & Access' });
+  const row2 = ctx.db.prepare('SELECT created_by, updated_by FROM milestones WHERE id=?').get(m.id) as Record<string, string>;
+  assert.equal(row2.created_by, 'john', 'creator preserved');
+  assert.equal(row2.updated_by, 'mark', 'last editor recorded');
+  assert.ok((store.activityFor(null, 50) as { kind: string }[]).some((a) => a.kind === 'milestone_updated'));
+  ctx.db.close();
+});
+
+test('auditability: soft-delete only, deletes attributed and logged, nothing physically removed', () => {
+  const { ctx, store } = mkStore('audit-del', 'john');
+  const item = store.createItem({ type: 'task', title: 'Temp' });
+  const c = store.addComment(item.id, '{}', 'a comment');
+  store.deleteComment(c.id);
+  store.deleteItem(item.id);
+
+  // Rows still physically present (soft delete), with attribution.
+  const crow = ctx.db.prepare('SELECT deleted, deleted_by FROM comments WHERE id=?').get(c.id) as Record<string, unknown>;
+  assert.equal(crow.deleted, 1);
+  assert.equal(crow.deleted_by, 'john');
+  const irow = ctx.db.prepare('SELECT deleted, deleted_by, deleted_at FROM items WHERE id=?').get(item.id) as Record<string, unknown>;
+  assert.equal(irow.deleted, 1);
+  assert.equal(irow.deleted_by, 'john');
+  assert.ok(irow.deleted_at);
+
+  // Both physical rows remain in the file.
+  assert.ok(ctx.db.prepare('SELECT 1 FROM comments WHERE id=?').get(c.id));
+  assert.ok(ctx.db.prepare('SELECT 1 FROM items WHERE id=?').get(item.id));
+
+  // Deletions are in the activity log.
+  const act = store.activityFor(item.id, 50) as { kind: string }[];
+  assert.ok(act.some((a) => a.kind === 'deleted'));
+  assert.ok(act.some((a) => a.kind === 'comment_deleted'));
+  ctx.db.close();
+});

@@ -195,6 +195,12 @@ export class Store {
   }
 
   // ---------- activity ----------
+  /** Public activity hook for collaborators outside Store (e.g. AttachmentManager). */
+  recordActivity(itemId: string | null, kind: string, oldV?: unknown, newV?: unknown): void {
+    this.logActivity(itemId, kind, null, oldV, newV);
+    this.events.onChange({ entity: 'activity', entityId: itemId ?? '*' });
+  }
+
   private logActivity(itemId: string | null, kind: string, field?: string | null, oldV?: unknown, newV?: unknown): void {
     this.db
       .prepare('INSERT INTO activity(id, item_id, actor_id, kind, field, old_value, new_value, at) VALUES(?,?,?,?,?,?,?,?)')
@@ -204,8 +210,8 @@ export class Store {
         this.actorId,
         kind,
         field ?? null,
-        oldV == null ? null : String(oldV).slice(0, 500),
-        newV == null ? null : String(newV).slice(0, 500),
+        oldV == null ? null : String(oldV).slice(0, 8000),
+        newV == null ? null : String(newV).slice(0, 8000),
         this.now(),
       );
   }
@@ -310,7 +316,11 @@ export class Store {
         if (k === 'body' || k === 'bodyText') continue; // body edits logged as one 'edited' entry
         this.logActivity(id, 'updated', k, (before as unknown as Record<string, unknown>)[k], JSON_ITEM_FIELDS.has(k) ? JSON.stringify(v) : v);
       }
-      if ('body' in changed) this.logActivity(id, 'edited', 'body');
+      // Body edit: record old/new plain text so the activity diff can show before/after.
+      if ('body' in changed || 'bodyText' in changed) {
+        const newText = 'bodyText' in changed ? String(changed.bodyText ?? '') : before.bodyText;
+        this.logActivity(id, 'edited', 'body', before.bodyText, newText);
+      }
     });
     tx();
     this.events.onChange({ entity: 'item', entityId: id });
@@ -337,8 +347,10 @@ export class Store {
   }
 
   deleteItem(id: string): void {
+    const stamp = this.now();
     const tx = this.db.transaction(() => {
-      this.db.prepare('UPDATE items SET deleted=1, updated_at=?, updated_by=? WHERE id=?').run(this.now(), this.actorId, id);
+      this.db.prepare('UPDATE items SET deleted=1, deleted_at=?, deleted_by=?, updated_at=?, updated_by=? WHERE id=?')
+        .run(stamp, this.actorId, stamp, this.actorId, id);
       this.localOp('item', id, 'delete', {});
       this.logActivity(id, 'deleted');
     });
@@ -518,19 +530,27 @@ export class Store {
   }
 
   updateComment(id: string, body: string, bodyText: string): void {
-    const fields = { body, bodyText, updatedAt: this.now() };
+    const row = this.db.prepare('SELECT item_id FROM comments WHERE id=?').get(id) as { item_id: string } | undefined;
+    const fields = { body, bodyText, updatedAt: this.now(), updatedBy: this.actorId };
     const tx = this.db.transaction(() => {
-      this.db.prepare('UPDATE comments SET body=?, body_text=?, updated_at=? WHERE id=?').run(body, bodyText, fields.updatedAt, id);
+      this.db.prepare('UPDATE comments SET body=?, body_text=?, updated_at=?, updated_by=? WHERE id=?')
+        .run(body, bodyText, fields.updatedAt, fields.updatedBy, id);
       this.localSet('comment', id, fields);
+      if (row) this.logActivity(row.item_id, 'comment_edited', null, null, bodyText.slice(0, 200));
     });
     tx();
     this.events.onChange({ entity: 'comment', entityId: id });
   }
 
   deleteComment(id: string): void {
+    const row = this.db.prepare('SELECT item_id, body_text FROM comments WHERE id=?').get(id) as
+      | { item_id: string; body_text: string }
+      | undefined;
+    const stamp = this.now();
     const tx = this.db.transaction(() => {
-      this.db.prepare('UPDATE comments SET deleted=1 WHERE id=?').run(id);
-      this.localSet('comment', id, { deleted: 1 });
+      this.db.prepare('UPDATE comments SET deleted=1, deleted_at=?, deleted_by=? WHERE id=?').run(stamp, this.actorId, id);
+      this.localSet('comment', id, { deleted: 1, deletedAt: stamp, deletedBy: this.actorId });
+      if (row) this.logActivity(row.item_id, 'comment_deleted', null, row.body_text.slice(0, 200), null);
     });
     tx();
     this.events.onChange({ entity: 'comment', entityId: id });
@@ -597,6 +617,9 @@ export class Store {
   upsertMilestone(m: Partial<Milestone> & { name: string }): Milestone {
     const id = m.id ?? crypto.randomUUID();
     const existing = this.db.prepare('SELECT * FROM milestones WHERE id=?').get(id) as Record<string, unknown> | undefined;
+    const now = this.now();
+    const createdAt = existing ? String(existing.created_at || now) : now;
+    const createdBy = existing ? String(existing.created_by || this.actorId) : this.actorId;
     const rec: Milestone = {
       id,
       name: m.name,
@@ -605,17 +628,24 @@ export class Store {
       status: (m.status ?? (existing ? existing.status : 'planned')) as Milestone['status'],
       sort: m.sort ?? (existing ? Number(existing.sort) : 0),
       sample: m.sample ?? (existing ? (Number(existing.sample) as 0 | 1) : 0),
+      createdAt, createdBy, updatedAt: now, updatedBy: this.actorId,
     };
     const tx = this.db.transaction(() => {
       this.db
         .prepare(
-          `INSERT INTO milestones(id, name, description, target_date, status, sort, sample, deleted) VALUES(?,?,?,?,?,?,?,0)
-           ON CONFLICT(id) DO UPDATE SET name=?, description=?, target_date=?, status=?, sort=?, deleted=0`,
+          `INSERT INTO milestones(id, name, description, target_date, status, sort, sample, deleted, created_at, created_by, updated_at, updated_by)
+             VALUES(?,?,?,?,?,?,?,0,?,?,?,?)
+           ON CONFLICT(id) DO UPDATE SET name=?, description=?, target_date=?, status=?, sort=?, deleted=0, updated_at=?, updated_by=?`,
         )
-        .run(rec.id, rec.name, rec.description, rec.targetDate, rec.status, rec.sort, rec.sample,
-             rec.name, rec.description, rec.targetDate, rec.status, rec.sort);
-      if (!existing) this.localCreate('milestone', id, { ...rec });
-      else this.localSet('milestone', id, { name: rec.name, description: rec.description, targetDate: rec.targetDate, status: rec.status, sort: rec.sort });
+        .run(rec.id, rec.name, rec.description, rec.targetDate, rec.status, rec.sort, rec.sample, createdAt, createdBy, now, this.actorId,
+             rec.name, rec.description, rec.targetDate, rec.status, rec.sort, now, this.actorId);
+      if (!existing) {
+        this.localCreate('milestone', id, { ...rec });
+        this.logActivity(null, 'milestone_created', 'milestone', null, rec.name);
+      } else {
+        this.localSet('milestone', id, { name: rec.name, description: rec.description, targetDate: rec.targetDate, status: rec.status, sort: rec.sort, updatedAt: now, updatedBy: this.actorId });
+        this.logActivity(null, 'milestone_updated', 'milestone', String(existing.name), rec.name);
+      }
     });
     tx();
     this.events.onChange({ entity: 'milestone', entityId: id });
@@ -628,12 +658,17 @@ export class Store {
       id: String(r.id), name: String(r.name), description: String(r.description),
       targetDate: r.target_date ? String(r.target_date) : null,
       status: r.status as Milestone['status'], sort: Number(r.sort), sample: Number(r.sample) as 0 | 1,
+      createdAt: r.created_at ? String(r.created_at) : '', createdBy: r.created_by ? String(r.created_by) : '',
+      updatedAt: r.updated_at ? String(r.updated_at) : '', updatedBy: r.updated_by ? String(r.updated_by) : '',
     }));
   }
 
   upsertRelease(m: Partial<Release> & { name: string }): Release {
     const id = m.id ?? crypto.randomUUID();
     const existing = this.db.prepare('SELECT * FROM releases WHERE id=?').get(id) as Record<string, unknown> | undefined;
+    const now = this.now();
+    const createdAt = existing ? String(existing.created_at || now) : now;
+    const createdBy = existing ? String(existing.created_by || this.actorId) : this.actorId;
     const rec: Release = {
       id,
       name: m.name,
@@ -643,17 +678,24 @@ export class Store {
       goals: m.goals ?? (existing ? String(existing.goals) : ''),
       notes: m.notes ?? (existing ? String(existing.notes) : ''),
       sample: m.sample ?? (existing ? (Number(existing.sample) as 0 | 1) : 0),
+      createdAt, createdBy, updatedAt: now, updatedBy: this.actorId,
     };
     const tx = this.db.transaction(() => {
       this.db
         .prepare(
-          `INSERT INTO releases(id, name, version, target_date, status, goals, notes, sample, deleted) VALUES(?,?,?,?,?,?,?,?,0)
-           ON CONFLICT(id) DO UPDATE SET name=?, version=?, target_date=?, status=?, goals=?, notes=?, deleted=0`,
+          `INSERT INTO releases(id, name, version, target_date, status, goals, notes, sample, deleted, created_at, created_by, updated_at, updated_by)
+             VALUES(?,?,?,?,?,?,?,?,0,?,?,?,?)
+           ON CONFLICT(id) DO UPDATE SET name=?, version=?, target_date=?, status=?, goals=?, notes=?, deleted=0, updated_at=?, updated_by=?`,
         )
-        .run(rec.id, rec.name, rec.version, rec.targetDate, rec.status, rec.goals, rec.notes, rec.sample,
-             rec.name, rec.version, rec.targetDate, rec.status, rec.goals, rec.notes);
-      if (!existing) this.localCreate('release', id, { ...rec });
-      else this.localSet('release', id, { name: rec.name, version: rec.version, targetDate: rec.targetDate, status: rec.status, goals: rec.goals, notes: rec.notes });
+        .run(rec.id, rec.name, rec.version, rec.targetDate, rec.status, rec.goals, rec.notes, rec.sample, createdAt, createdBy, now, this.actorId,
+             rec.name, rec.version, rec.targetDate, rec.status, rec.goals, rec.notes, now, this.actorId);
+      if (!existing) {
+        this.localCreate('release', id, { ...rec });
+        this.logActivity(null, 'release_created', 'release', null, rec.name);
+      } else {
+        this.localSet('release', id, { name: rec.name, version: rec.version, targetDate: rec.targetDate, status: rec.status, goals: rec.goals, notes: rec.notes, updatedAt: now, updatedBy: this.actorId });
+        this.logActivity(null, 'release_updated', 'release', String(existing.name), rec.name);
+      }
     });
     tx();
     this.events.onChange({ entity: 'release', entityId: id });
@@ -667,6 +709,8 @@ export class Store {
       targetDate: r.target_date ? String(r.target_date) : null,
       status: r.status as Release['status'], goals: String(r.goals), notes: String(r.notes),
       sample: Number(r.sample) as 0 | 1,
+      createdAt: r.created_at ? String(r.created_at) : '', createdBy: r.created_by ? String(r.created_by) : '',
+      updatedAt: r.updated_at ? String(r.updated_at) : '', updatedBy: r.updated_by ? String(r.updated_by) : '',
     }));
   }
 
@@ -703,9 +747,12 @@ export class Store {
   }
 
   deleteView(id: string): void {
+    const row = this.db.prepare('SELECT name FROM saved_views WHERE id=?').get(id) as { name: string } | undefined;
+    const stamp = this.now();
     const tx = this.db.transaction(() => {
-      this.db.prepare('UPDATE saved_views SET deleted=1 WHERE id=?').run(id);
-      this.localSet('saved_view', id, { deleted: 1 });
+      this.db.prepare('UPDATE saved_views SET deleted=1, deleted_at=?, deleted_by=? WHERE id=?').run(stamp, this.actorId, id);
+      this.localSet('saved_view', id, { deleted: 1, deletedAt: stamp, deletedBy: this.actorId });
+      this.logActivity(null, 'view_deleted', 'saved_view', row ? row.name : null, null);
     });
     tx();
   }
@@ -1056,7 +1103,7 @@ export class Store {
         this.applyItemFields(String(row.entity_id), fields);
         this.localSet('item', String(row.entity_id), fields);
       }
-      this.db.prepare('UPDATE sync_conflicts SET resolved_at=?, resolution=? WHERE id=?').run(this.now(), resolution, id);
+      this.db.prepare('UPDATE sync_conflicts SET resolved_at=?, resolution=?, resolved_by=? WHERE id=?').run(this.now(), resolution, this.actorId, id);
     });
     tx();
     this.events.onChange({ entity: String(row.entity), entityId: String(row.entity_id) });

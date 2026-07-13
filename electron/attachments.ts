@@ -54,6 +54,7 @@ export class AttachmentManager {
     // Record in oplog so the peer learns about it (private method access via cast — Store owns oplog format).
     (this.store as unknown as { localCreate: (e: string, id: string, r: Record<string, unknown>) => void })
       .localCreate('attachment', att.id, { ...att });
+    this.store.recordActivity(itemId, 'attachment_added', null, att.filename);
 
     const transport = this.getTransport();
     if (transport && transport.available()) {
@@ -118,9 +119,15 @@ export class AttachmentManager {
   }
 
   remove(attachmentId: string): void {
-    this.store.db.prepare('UPDATE attachments SET deleted=1 WHERE id=?').run(attachmentId);
+    const row = this.store.db.prepare('SELECT item_id, filename FROM attachments WHERE id=?').get(attachmentId) as
+      | { item_id: string; filename: string }
+      | undefined;
+    const stamp = new Date().toISOString();
+    this.store.db.prepare('UPDATE attachments SET deleted=1, deleted_at=?, deleted_by=? WHERE id=?')
+      .run(stamp, this.store.actorId, attachmentId);
     (this.store as unknown as { localSet: (e: string, id: string, f: Record<string, unknown>) => void })
-      .localSet('attachment', attachmentId, { deleted: 1 });
+      .localSet('attachment', attachmentId, { deleted: 1, deletedAt: stamp, deletedBy: this.store.actorId });
+    if (row) this.store.recordActivity(row.item_id, 'attachment_removed', row.filename, null);
   }
 }
 
