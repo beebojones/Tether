@@ -57,3 +57,9 @@ the OneDrive/SharePoint client. See `docs/SECURITY.md`.
 - `docs/RELEASING.md` — build, release, and update workflow
 - `docs/USER_GUIDE.md` — day-to-day usage
 - `docs/walkthrough/index.html` — static product walkthrough / presentation
+
+Open the walkthrough locally with:
+
+```bash
+npm run walkthrough
+```

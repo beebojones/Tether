@@ -12,6 +12,7 @@
     "dev:electron": "node scripts/dev-electron.mjs",
     "build": "npm run build:main && vite build",
     "build:main": "node scripts/build-main.mjs",
+    "walkthrough": "node scripts/serve-walkthrough.mjs",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "dist": "npm run build && electron-builder --win",
     "postdist": "electron-rebuild -f -w better-sqlite3",
