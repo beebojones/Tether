@@ -20,6 +20,65 @@ npm test            # data-layer + sync test suite
 npm run dist        # Windows installer → release/
 ```
 
+### Corporate network / SSL
+
+On a corporate network that intercepts TLS (many do), `npm install` or
+`npm run rebuild` may fail with `UNABLE_TO_GET_ISSUER_CERT_LOCALLY` — often
+surfaced by npm as the misleading `Exit handler never called!`. The proxy
+re-signs traffic with an internal root certificate that Node does not trust by
+default. Tell Node to use the Windows certificate store (which has that root),
+then re-run the failed command:
+
+```powershell
+$env:NODE_OPTIONS = "--use-system-ca"   # this shell; Node 18+/22+/24
+npm install
+npm run rebuild
+```
+
+This only affects developers **building from source** on such a network. The
+packaged installer (`npm run dist`) bundles everything, so end users are
+unaffected.
+
+### Electron binary fails to extract (hangs, or `cli.js` cannot find Electron)
+
+Installing `electron` downloads a ~128 MB runtime in a `postinstall` step and
+unzips it into `node_modules/electron/dist`. On some Windows machines (often
+due to antivirus scanning the temp files it writes) the `extract-zip` step
+**hangs and never completes** — `npm install` looks fine, but the extraction
+silently does nothing, leaving no `node_modules/electron/path.txt`. Later,
+`npm run dev` crashes in `node_modules/electron/cli.js` because it cannot find
+the binary.
+
+The download itself usually succeeds; only the extract step fails. Recover by
+extracting the already-downloaded zip yourself:
+
+```powershell
+# 1. Find the cached zip (downloaded by the failed install):
+#    %LOCALAPPDATA%\electron\Cache\<hash>\electron-v<version>-win32-x64.zip
+$zip  = (Get-ChildItem "$env:LOCALAPPDATA\electron\Cache" -Recurse -Filter *.zip | Select-Object -First 1).FullName
+$dist = "node_modules\electron\dist"
+
+# 2. Extract with .NET (bypasses the hanging extract-zip):
+if (Test-Path $dist) { Remove-Item -Recurse -Force $dist }
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($zip, $dist)
+
+# 3. Write the path.txt Electron looks for:
+Set-Content node_modules\electron\path.txt "electron.exe" -NoNewline -Encoding ascii
+```
+
+Verify with `node -e "console.log(require('electron'))"` — it should print the
+path to `dist\electron.exe`.
+
+### Building on a different CPU architecture than you'll run on
+
+If the repo/lockfile was last touched on an **arm64** machine but you're on
+**x64** (or vice versa), the arch-specific pieces must be built for *your*
+machine: run `npm run rebuild` (recompiles `better-sqlite3` against Electron's
+ABI), and Electron/esbuild/rollup will fetch the matching native binaries
+automatically. A clean `npm install` on modern npm resolves these correctly
+because the lockfile lists every platform's optional binary.
+
 ## Walkthrough
 
 Open the hosted walkthrough from any device:
@@ -41,7 +100,7 @@ browser, and picks an available port starting at `5200`.
 
 ## First run
 
-1. Pick your identity (John / Mark / custom).
+1. Pick your identity (John Crouch / Mark Bidinger / custom).
 2. Optionally choose the shared sync folder (a OneDrive- or SharePoint-synced
    directory both users can reach). Skip it to work local-only; configure later
    in Settings.

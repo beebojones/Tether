@@ -9,7 +9,7 @@ npm run dist                 # → release/Tether Setup <version>-{arm64,x64}.ex
 ```
 
 Two installers are produced: **arm64** (John's Windows-on-ARM machine) and **x64**
-(standard corporate laptops — Mark). electron-builder rebuilds the native SQLite
+(standard corporate laptops — Mark Bidinger). electron-builder rebuilds the native SQLite
 module per architecture during packaging; the `postdist` script restores the local
 arm64 build so `npm run dev` and `npm test` keep working afterwards. Close any
 running Tether/Electron instance before `npm run dist` — an open app locks the
@@ -18,7 +18,7 @@ native module and `release/` directory.
 The installer is **per-user** (no admin rights needed) and creates Start-menu and
 desktop shortcuts. Uninstall via Windows Settings → Apps.
 
-## Distribute to Mark (documented manual workflow)
+## Distribute to Mark Bidinger (documented manual workflow)
 
 Tether deliberately ships **without a self-updating downloader** — an updater that
 fetches and executes remote binaries is exactly what enterprise security teams flag.

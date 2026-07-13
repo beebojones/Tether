@@ -19,16 +19,16 @@ with one fast desktop app shared across computers — tracking work, requirement
 decisions, risks, blockers, system-access requests, meetings, milestones, and
 releases, and turning all of it into leadership-ready updates on demand.
 
-**First project managed in Tether:** the Support AI initiative (John + Mark).
+**First project managed in Tether:** the Support AI initiative (John Crouch + Mark Bidinger).
 "Support AI" is project content, not application identity — Tether stays reusable
 for future projects.
 
 ## Users
 
-- **John** — primary organizer, knowledge systems builder, support-domain expert.
-  Needs powerful editing, organization, reporting, presentation.
-- **Mark** — technical collaborator. Needs a shared current view, full edit
-  capability from his own computer.
+- **John Crouch** — primary organizer, knowledge systems builder, support-domain
+  expert. Needs powerful editing, organization, reporting, presentation.
+- **Mark Bidinger** — technical collaborator. Needs a shared current view, full
+  edit capability from his own computer.
 - **Secondary** (exports only): Allen, George, Jessica, knowledge/support
   leadership, security and IT reviewers.
 

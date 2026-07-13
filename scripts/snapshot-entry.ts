@@ -5,7 +5,7 @@ import type { WorkItem, Milestone, User } from '../shared/types';
 const days = (n: number) => new Date(Date.now() + n * 864e5).toISOString();
 const users: User[] = [
   { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF', createdAt: days(-30) },
-  { id: 'mark', name: 'Mark', initials: 'M', color: '#4CC38A', createdAt: days(-30) },
+  { id: 'mark', name: 'Mark Bidinger', initials: 'MB', color: '#4CC38A', createdAt: days(-30) },
 ];
 const milestones: Milestone[] = [
   { id: 'm1', name: 'Discovery & Access', description: '', targetDate: days(34).slice(0, 10), status: 'active', sort: 1, sample: 1 },

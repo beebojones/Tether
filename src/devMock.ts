@@ -20,7 +20,7 @@ const uid = () => `mock-${++idc}`;
 
 const users: User[] = [
   { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF', createdAt: daysAgo(30) },
-  { id: 'mark', name: 'Mark', initials: 'M', color: '#4CC38A', createdAt: daysAgo(30) },
+  { id: 'mark', name: 'Mark Bidinger', initials: 'MB', color: '#4CC38A', createdAt: daysAgo(30) },
 ];
 
 const milestones: Milestone[] = [
@@ -145,7 +145,7 @@ const syncStatus: SyncStatus = {
   lastError: null,
   pendingOps: 0,
   openConflicts: conflicts.filter((c) => !c.resolvedAt).length,
-  peers: [{ deviceId: 'mark-device', userName: 'Mark', lastSeenAt: daysAgo(0.01) }],
+  peers: [{ deviceId: 'mark-device', userName: 'Mark Bidinger', lastSeenAt: daysAgo(0.01) }],
 };
 
 function applyFilter(filter: ItemFilter): WorkItem[] {
