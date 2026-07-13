@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ListTodo, KanbanSquare, Map, KeyRound, Scale, CalendarDays,
   AlertTriangle, FileBarChart, History, GitMerge, Settings, Plus,
 } from 'lucide-react';
-import { useApp } from '../store';
+import { useApp, userById } from '../store';
 import { api } from '../api';
 import { Avatar } from './ui';
 import TetherMark from './TetherMark';
@@ -46,7 +46,10 @@ export default function Sidebar() {
     void api.conflicts.list(true).then((c) => setConflictCount(c.length));
   }, [dataTick, syncStatus?.openConflicts]);
 
-  const user = settings?.currentUser;
+  const users = useApp((s) => s.users);
+  const identity = settings?.currentUser;
+  // Prefer the DB user (carries the avatar) over the settings identity (which does not).
+  const user = identity ? userById(users, identity.id) ?? { ...identity, createdAt: '' } : null;
 
   const isActive = (r: Route) =>
     r.view === route.view && (r.view !== 'items' || (route.view === 'items' && route.title === (r as { title?: string }).title));
@@ -95,7 +98,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <Avatar user={user ? { ...user, createdAt: '' } : null} size="lg" />
+        <Avatar user={user} size="lg" />
         <div className="who">
           <div className="n">{user?.name ?? 'Not set'}</div>
           <div className="r">{syncStatus?.folder ? 'Shared project' : 'Local only'}</div>
