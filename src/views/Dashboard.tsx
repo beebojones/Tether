@@ -7,11 +7,30 @@ import { useApp } from '../store';
 import { useItems, TypeIcon, StatusBadge, fmtDate, fmtDateTime } from '../components/ui';
 import { describeActivity } from './ItemDetail';
 import ProjectHealth from '../components/ProjectHealth';
+import ViewCustomizer from '../components/ViewCustomizer';
+import { useViewPrefs } from '../useViewPrefs';
+import { visibleKeys, type CanonicalItem } from '../viewPrefs';
 import './dashboard.css';
+
+const DASHBOARD_CARDS: CanonicalItem[] = [
+  { key: 'in-progress', label: 'In progress' },
+  { key: 'blocked', label: 'Blocked' },
+  { key: 'access', label: 'Access requests in flight' },
+  { key: 'decisions', label: 'Decisions needed' },
+  { key: 'due', label: 'Due soon / overdue' },
+  { key: 'completed', label: 'Completed this week' },
+  { key: 'milestones', label: 'Milestones' },
+  { key: 'activity', label: 'Recent activity' },
+];
 
 export default function Dashboard() {
   const { openItem, milestones, users, navigate } = useApp();
   const dataTick = useApp((s) => s.dataTick);
+  const { resolved, defaults, update } = useViewPrefs('dashboard', DASHBOARD_CARDS);
+  const cardProps = (key: string) => {
+    const idx = resolved.items.findIndex((i) => i.key === key);
+    return { order: idx < 0 ? 999 : idx, hidden: idx < 0 ? true : !resolved.items[idx].visible };
+  };
 
   const { items: inProgress } = useItems({ statuses: ['in_progress', 'in_review'] }, { field: 'priority', dir: 'asc' }, 12);
   const { items: blocked } = useItems({ types: ['blocker'], statuses: ['active'] }, { field: 'priority', dir: 'asc' }, 10);
@@ -55,33 +74,34 @@ export default function Dashboard() {
           openDecisions={openDecisions.length}
           openHighRisks={allOpen.filter((i) => i.type === 'risk' && (i.status === 'open' || i.status === 'mitigating') && (i.priority === 'high' || i.priority === 'urgent')).length}
         />
+        <ViewCustomizer noun="cards" prefs={resolved} defaults={defaults} onChange={update} />
       </div>
 
-      <div className="dash-grid">
-        <Card title="In progress" icon={<ActivityIcon size={14} />} onMore={() => navigate({ view: 'items', title: 'All Work' })}>
+      <div className="dash-grid" data-size={resolved.size}>
+        <Card {...cardProps('in-progress')} title="In progress" icon={<ActivityIcon size={14} />} onMore={() => navigate({ view: 'items', title: 'All Work' })}>
           {inProgress.length === 0 && <Empty text="Nothing in flight. Pick something from the backlog." />}
           {inProgress.map((it) => <Row key={it.id} it={it} />)}
         </Card>
 
-        <Card title="Blocked" icon={<AlertTriangle size={14} />} tone={blocked.length + blockedWork.length > 0 ? 'danger' : undefined}
+        <Card {...cardProps('blocked')} title="Blocked" icon={<AlertTriangle size={14} />} tone={blocked.length + blockedWork.length > 0 ? 'danger' : undefined}
           onMore={() => navigate({ view: 'risks' })}>
           {blocked.length + blockedWork.length === 0 && <Empty text="No active blockers." />}
           {blocked.map((it) => <Row key={it.id} it={it} />)}
           {blockedWork.map((it) => <Row key={it.id} it={it} />)}
         </Card>
 
-        <Card title="Access requests in flight" icon={<KeyRound size={14} />} tone={accessWaiting.length > 0 ? 'warning' : undefined}
+        <Card {...cardProps('access')} title="Access requests in flight" icon={<KeyRound size={14} />} tone={accessWaiting.length > 0 ? 'warning' : undefined}
           onMore={() => navigate({ view: 'access' })}>
           {accessWaiting.length === 0 && <Empty text="No pending access requests." />}
           {accessWaiting.map((it) => <Row key={it.id} it={it} />)}
         </Card>
 
-        <Card title="Decisions needed" icon={<Scale size={14} />} onMore={() => navigate({ view: 'decisions' })}>
+        <Card {...cardProps('decisions')} title="Decisions needed" icon={<Scale size={14} />} onMore={() => navigate({ view: 'decisions' })}>
           {openDecisions.length === 0 && <Empty text="No open decisions." />}
           {openDecisions.map((it) => <Row key={it.id} it={it} />)}
         </Card>
 
-        <Card title="Due soon / overdue" icon={<Clock size={14} />} tone={overdue.length > 0 ? 'danger' : undefined}>
+        <Card {...cardProps('due')} title="Due soon / overdue" icon={<Clock size={14} />} tone={overdue.length > 0 ? 'danger' : undefined}>
           {overdue.length === 0 && dueSoon.length === 0 && <Empty text="Nothing due in the next 7 days." />}
           {overdue.map((it) => (
             <Row key={it.id} it={it} right={<span className="due overdue">{fmtDate(it.dueDate)} · overdue</span>} />
@@ -91,12 +111,12 @@ export default function Dashboard() {
           ))}
         </Card>
 
-        <Card title="Completed this week" icon={<CheckCircle2 size={14} />} tone="success">
+        <Card {...cardProps('completed')} title="Completed this week" icon={<CheckCircle2 size={14} />} tone="success">
           {completedWeek.length === 0 && <Empty text="Nothing completed yet this week." />}
           {completedWeek.slice(0, 10).map((it) => <Row key={it.id} it={it} />)}
         </Card>
 
-        <Card title="Milestones" wide>
+        <Card {...cardProps('milestones')} title="Milestones" wide>
           {milestones.length === 0 && <Empty text="No milestones defined. Add them in Roadmap." />}
           {milestones.map((m) => {
             const inMs = allOpen.filter((i) => i.milestoneId === m.id);
@@ -114,7 +134,7 @@ export default function Dashboard() {
           })}
         </Card>
 
-        <Card title="Recent activity" wide onMore={() => navigate({ view: 'activity' })}>
+        <Card {...cardProps('activity')} title="Recent activity" wide onMore={() => navigate({ view: 'activity' })}>
           {recent.length === 0 && <Empty text="No activity yet." />}
           {recent.map((a) => (
             <div key={a.id} className="dash-activity" onClick={() => a.itemId && openItem(a.itemId)} role={a.itemId ? 'button' : undefined}>
@@ -128,12 +148,14 @@ export default function Dashboard() {
   );
 }
 
-function Card({ title, icon, children, tone, wide, onMore }: {
+function Card({ title, icon, children, tone, wide, onMore, order, hidden }: {
   title: string; icon?: React.ReactNode; children: React.ReactNode;
   tone?: 'danger' | 'warning' | 'success'; wide?: boolean; onMore?: () => void;
+  order?: number; hidden?: boolean;
 }) {
+  if (hidden) return null;
   return (
-    <section className={`dash-card ${tone ?? ''} ${wide ? 'wide' : ''}`}>
+    <section className={`dash-card ${tone ?? ''} ${wide ? 'wide' : ''}`} style={{ order }}>
       <div className="dash-card-head">
         {icon}
         {title}

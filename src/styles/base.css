@@ -16,10 +16,18 @@ body {
     var(--bg-app);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
+  -webkit-user-select: none;
   user-select: none;
 }
 
-input, textarea, [contenteditable] { user-select: text; }
+/* Re-enable selection AND the blinking caret on editable surfaces. The -webkit-
+   prefix is required: without it, Chromium/Electron leaves the caret unpainted
+   until a selection change (first keystroke) — the "no cursor until you type" bug. */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+  caret-color: var(--text-primary);
+}
 
 ::selection { background: var(--accent-soft); }
 

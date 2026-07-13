@@ -352,6 +352,24 @@ export interface SavedView {
   createdAt: string;
 }
 
+// ---------- Per-user view layout preferences (local, not synced) ----------
+export type ViewSize = 'small' | 'standard' | 'large';
+
+export interface ViewItemPref {
+  key: string; // stable card/column key
+  visible: boolean;
+}
+
+export interface SingleViewPrefs {
+  size: ViewSize;
+  items: ViewItemPref[]; // ordered; drives arrangement + visibility
+}
+
+export interface ViewPrefs {
+  board?: SingleViewPrefs;
+  dashboard?: SingleViewPrefs;
+}
+
 // ---------- Sync ----------
 export interface Op {
   opId: string; // uuid

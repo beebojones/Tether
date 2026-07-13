@@ -164,8 +164,64 @@ button.tb.active { background: var(--accent-soft); color: var(--accent-strong); 
 /* Task lists */
 .ProseMirror ul[data-type='taskList'] { list-style: none; padding-left: 4px; }
 .ProseMirror ul[data-type='taskList'] li { display: flex; gap: 8px; align-items: baseline; }
-.ProseMirror ul[data-type='taskList'] input[type='checkbox'] { accent-color: var(--accent); cursor: pointer; }
 .ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div { color: var(--text-muted); text-decoration: line-through; }
+
+/* Custom checkbox. Shape is switched by :root[data-checkbox-shape] (set in App.tsx,
+   mirrors the data-density pattern). We take over native rendering to draw the box
+   + checkmark, so a shape can be applied. */
+.ProseMirror ul[data-type='taskList'] input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  top: 2px;
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border: 1.6px solid var(--border-strong);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.ProseMirror ul[data-type='taskList'] input[type='checkbox']:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+/* white checkmark, drawn for every shape */
+.ProseMirror ul[data-type='taskList'] input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 4.3px;
+  top: 1px;
+  width: 3.4px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 1.7px 1.7px 0;
+  transform: rotate(45deg);
+}
+
+/* Square (default) */
+:root[data-checkbox-shape='square'] .ProseMirror ul[data-type='taskList'] input[type='checkbox'] { border-radius: 3px; }
+/* Circle */
+:root[data-checkbox-shape='circle'] .ProseMirror ul[data-type='taskList'] input[type='checkbox'] { border-radius: 50%; }
+/* Hexagon — clip-path can't stroke, so layer a filled hexagon with an inset
+   background-colored hexagon to fake an outline; checked fills fully. */
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] input[type='checkbox'] {
+  border: none;
+  border-radius: 0;
+  background: var(--border-strong);
+  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
+}
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] input[type='checkbox']::before {
+  content: '';
+  position: absolute;
+  inset: 1.6px;
+  background: var(--bg-panel);
+  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
+}
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] input[type='checkbox']:checked,
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] input[type='checkbox']:checked::before {
+  background: var(--accent);
+}
 
 /* Tables */
 .ProseMirror table {

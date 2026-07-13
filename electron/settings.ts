@@ -1,6 +1,7 @@
 // App settings persisted to <userData>/settings.json. No secrets live here.
 import fs from 'node:fs';
 import path from 'node:path';
+import type { ViewPrefs } from '../shared/types';
 
 export interface UserIdentity {
   id: string; // 'john' | 'mark' | future slug
@@ -13,16 +14,20 @@ export interface AppSettings {
   currentUser: UserIdentity | null;
   syncFolder: string | null; // OneDrive/SharePoint-synced directory; null = local-only mode
   density: 'compact' | 'comfortable';
+  checkboxShape: 'square' | 'circle' | 'hexagon'; // task-list checkbox shape; per-user, local
   projectName: string; // display name used by reports/exports/presentation — editable content
   seedLoaded: boolean;
+  viewPrefs: ViewPrefs; // per-user Board/Dashboard layout; local-only, never synced
 }
 
 const DEFAULTS: AppSettings = {
   currentUser: null,
   syncFolder: null,
   density: 'compact',
+  checkboxShape: 'circle',
   projectName: 'Support AI',
   seedLoaded: false,
+  viewPrefs: {},
 };
 
 export class Settings {

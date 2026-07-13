@@ -1,0 +1,87 @@
+.vcz { position: relative; display: inline-block; }
+
+.vcz-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  width: 280px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+}
+
+.vcz-section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+  margin: 4px 2px 8px;
+}
+.vcz-section-label .muted { margin-left: auto; font-weight: 600; letter-spacing: 0; text-transform: none; }
+
+.vcz-sizes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.vcz-sizes button {
+  padding: 6px 4px;
+  font-size: var(--fs-xs);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+}
+.vcz-sizes button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.vcz-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.vcz-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px;
+  border-radius: var(--r-sm);
+  cursor: grab;
+  user-select: none;
+}
+.vcz-item:hover { background: var(--bg-hover); }
+.vcz-item.dragging { opacity: 0.5; background: var(--bg-hover); }
+.vcz-item.hidden .vcz-item-label { color: var(--text-tertiary); text-decoration: line-through; }
+.vcz-grip { color: var(--text-tertiary); flex-shrink: 0; }
+.vcz-item-label { flex: 1; min-width: 0; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vcz-eye {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.vcz-eye:hover { color: var(--text-primary); }
+
+.vcz-foot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+}
+.vcz-foot .ghost { font-size: var(--fs-xs); }

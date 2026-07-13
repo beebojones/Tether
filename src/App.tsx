@@ -33,6 +33,11 @@ export default function App() {
     document.documentElement.dataset.density = settings?.density ?? 'compact';
   }, [settings?.density]);
 
+  // Task-list checkbox shape — CSS in editor.css keys off data-checkbox-shape.
+  useEffect(() => {
+    document.documentElement.dataset.checkboxShape = settings?.checkboxShape ?? 'circle';
+  }, [settings?.checkboxShape]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {

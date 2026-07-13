@@ -87,6 +87,21 @@ export default function SettingsView() {
             <option value="comfortable">Comfortable — larger rows and text</option>
           </select>
         </div>
+        <div className="form-row" style={{ maxWidth: 320, marginTop: 12 }}>
+          <label htmlFor="set-checkbox">Checkbox shape</label>
+          <select
+            id="set-checkbox"
+            value={settings?.checkboxShape ?? 'circle'}
+            onChange={(e) => void api.settings.set({ checkboxShape: e.target.value as 'square' | 'circle' | 'hexagon' }).then(setSettings)}
+          >
+            <option value="circle">Circle (default)</option>
+            <option value="square">Square</option>
+            <option value="hexagon">Hexagon</option>
+          </select>
+          <p className="muted" style={{ fontSize: 'var(--fs-xs)' }}>
+            Shape of task-list checkboxes in the editor.
+          </p>
+        </div>
       </Section>
 
       <Section title="Collaboration & sync">

@@ -2,7 +2,7 @@
 import type {
   WorkItem, ItemFilter, ItemSort, ItemType, LinkKind, Comment, Attachment, ItemLink,
   Milestone, Release, SavedView, SyncConflict, SyncStatus, User, SearchResult, ItemVersion,
-  ActivityEntry,
+  ActivityEntry, ViewPrefs,
 } from '@shared/types';
 
 export interface AppInfo {
@@ -30,8 +30,10 @@ export interface AppSettings {
   currentUser: UserIdentity | null;
   syncFolder: string | null;
   density: 'compact' | 'comfortable';
+  checkboxShape: 'square' | 'circle' | 'hexagon';
   projectName: string;
   seedLoaded: boolean;
+  viewPrefs: ViewPrefs;
 }
 
 export interface LinkedItem {

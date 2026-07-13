@@ -134,7 +134,9 @@ const conflicts: SyncConflict[] = [
 const versions: ItemVersion[] = [];
 const savedViews: SavedView[] = [];
 let mockDensity: 'compact' | 'comfortable' = 'compact';
+let mockCheckboxShape: 'square' | 'circle' | 'hexagon' = 'circle';
 let mockProjectName = 'Support AI';
+let mockViewPrefs: import('@shared/types').ViewPrefs = {};
 const listeners = new Set<(w: { entity: string; entityId: string }) => void>();
 const emit = () => listeners.forEach((l) => l({ entity: '*', entityId: '*' }));
 
@@ -195,12 +197,16 @@ export function installDevMock(): void {
         currentUser: { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF' },
         syncFolder: syncStatus.folder,
         density: mockDensity,
+        checkboxShape: mockCheckboxShape,
         projectName: mockProjectName,
         seedLoaded: true,
+        viewPrefs: mockViewPrefs,
       }),
-      set: async (patch: { density?: 'compact' | 'comfortable'; projectName?: string }) => {
+      set: async (patch: { density?: 'compact' | 'comfortable'; checkboxShape?: 'square' | 'circle' | 'hexagon'; projectName?: string; viewPrefs?: import('@shared/types').ViewPrefs }) => {
         if (patch.density) mockDensity = patch.density;
+        if (patch.checkboxShape) mockCheckboxShape = patch.checkboxShape;
         if (patch.projectName !== undefined) mockProjectName = patch.projectName;
+        if (patch.viewPrefs !== undefined) mockViewPrefs = patch.viewPrefs;
         return bridge.settings.get();
       },
       setUser: async () => bridge.settings.get(),
