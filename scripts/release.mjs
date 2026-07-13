@@ -1,0 +1,147 @@
+// One-command release. Usage:
+//   npm run release                 # auto-bump patch (0.1.1 -> 0.1.2), build, stage, push
+//   npm run release -- minor        # bump minor (0.1.2 -> 0.2.0)
+//   npm run release -- major        # bump major
+//   npm run release -- -m "message" # commit pending changes with this message
+//   npm run release -- --no-push    # skip git push
+//   npm run release -- --stage-only # don't bump/build; just (re)stage the current version
+//
+// Stages into <syncFolder>/releases/<version>/ where syncFolder is read from the
+// app's own settings.json — the same shared folder both machines auto-update from.
+// No network calls in the app; this script just writes files into that folder.
+
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const args = process.argv.slice(2);
+
+const bumpType = args.find((a) => ['patch', 'minor', 'major'].includes(a)) ?? 'patch';
+const noPush = args.includes('--no-push');
+const stageOnly = args.includes('--stage-only');
+const mIdx = args.findIndex((a) => a === '-m' || a === '--message');
+const commitMessage = mIdx >= 0 ? args[mIdx + 1] : null;
+
+// Make the corporate-TLS fix automatic for the build step.
+if (!(process.env.NODE_OPTIONS ?? '').includes('--use-system-ca')) {
+  process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS ?? ''} --use-system-ca`.trim();
+}
+
+function run(cmd, opts = {}) {
+  console.log(`\n$ ${cmd}`);
+  return execSync(cmd, { cwd: repoRoot, stdio: 'inherit', ...opts });
+}
+function capture(cmd) {
+  return execSync(cmd, { cwd: repoRoot, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+}
+function step(msg) { console.log(`\n=== ${msg} ===`); }
+function die(msg) { console.error(`\nRelease aborted: ${msg}`); process.exit(1); }
+
+function readSyncFolder() {
+  const settingsPath = path.join(process.env.APPDATA ?? '', 'Tether', 'settings.json');
+  if (!fs.existsSync(settingsPath)) {
+    die(`No settings found at ${settingsPath}. Open Tether once and configure the shared folder first.`);
+  }
+  const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  if (!settings.syncFolder) {
+    die('Tether has no shared folder configured (Settings → Choose shared folder). Set one, then re-run.');
+  }
+  if (!fs.existsSync(settings.syncFolder)) {
+    die(`Configured shared folder does not exist on disk: ${settings.syncFolder}`);
+  }
+  return settings.syncFolder;
+}
+
+function sha256(file) {
+  return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+}
+
+function releaseNotes(version, prevTag) {
+  let changes = '';
+  try {
+    const range = prevTag ? `${prevTag}..HEAD` : 'HEAD';
+    changes = capture(`git log ${range} --no-merges --pretty=format:%s`)
+      .split('\n')
+      .filter((s) => s && !/^\d+\.\d+\.\d+$/.test(s)) // drop the version-bump commits
+      .map((s) => `- ${s}`)
+      .join('\n');
+  } catch { /* first release or no tags */ }
+  return `# Tether ${version} — Release Notes\n\n${changes || '- Maintenance and improvements.'}\n\n` +
+    `## Install\n\nVerify against \`SHA256.txt\`, then run \`Tether Setup ${version}.exe\`. ` +
+    `Installing over your existing copy preserves data and settings; a backup is taken automatically ` +
+    `before any database changes.\n\nIf you are already on a version with auto-update, Tether will ` +
+    `offer this update on next launch — no manual step needed.\n`;
+}
+
+function installGuide(version) {
+  return `# Installing Tether ${version}\n\n` +
+    `Close Tether if it is open, then double-click \`Tether Setup ${version}.exe\`.\n\n` +
+    `Windows shows "Windows protected your PC" (the app is not code-signed) — click ` +
+    `**More info** → **Run anyway**. Per-user install, no admin needed. Your data and ` +
+    `settings are preserved.\n\n` +
+    `Optional integrity check (PowerShell in this folder):\n\n` +
+    "```powershell\nGet-FileHash \"Tether Setup " + version + ".exe\" -Algorithm SHA256\n```\n\n" +
+    `It should match \`SHA256.txt\`.\n`;
+}
+
+// ---- preconditions ----
+const branch = capture('git rev-parse --abbrev-ref HEAD');
+const prevTag = (() => { try { return capture('git describe --tags --abbrev=0'); } catch { return ''; } })();
+
+if (!stageOnly) {
+  // Commit any pending work so the version bump is clean and captured.
+  const dirty = capture('git status --porcelain');
+  if (dirty) {
+    step('Committing pending changes');
+    run('git add -A');
+    const msg = commitMessage ?? 'Update Tether';
+    run(`git commit -m ${JSON.stringify(msg)}`);
+  }
+
+  step(`Bumping version (${bumpType})`);
+  run(`npm version ${bumpType} -m "Release %s"`);
+}
+
+const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+const version = pkg.version;
+
+if (!stageOnly) {
+  step(`Building installer for ${version}`);
+  run('npm run dist');
+}
+
+const installer = path.join(repoRoot, 'release', `Tether Setup ${version}.exe`);
+if (!fs.existsSync(installer)) {
+  die(`Installer not found: ${installer}. ${stageOnly ? 'Run a full release (without --stage-only) first.' : 'Build may have failed.'}`);
+}
+
+// ---- stage into the shared folder ----
+const syncFolder = readSyncFolder();
+const destDir = path.join(syncFolder, 'releases', version);
+step(`Staging ${version} into shared folder`);
+fs.mkdirSync(destDir, { recursive: true });
+fs.copyFileSync(installer, path.join(destDir, `Tether Setup ${version}.exe`));
+const hash = sha256(installer);
+fs.writeFileSync(path.join(destDir, 'SHA256.txt'), `${hash} *Tether Setup ${version}.exe`);
+fs.writeFileSync(path.join(destDir, 'RELEASE_NOTES.md'), releaseNotes(version, prevTag));
+fs.writeFileSync(path.join(destDir, 'INSTALL.md'), installGuide(version));
+console.log(`Staged: ${destDir}`);
+console.log(`SHA256: ${hash}`);
+
+// ---- push ----
+if (!noPush && !stageOnly) {
+  step('Pushing to origin');
+  try {
+    run(`git push origin ${branch} --follow-tags`);
+  } catch {
+    console.warn('Push failed (network/auth?). Code is committed locally — push manually when able.');
+  }
+}
+
+console.log(`\n✔ Release ${version} complete.`);
+console.log(`  Installed users on an auto-update build will be offered ${version} on next launch.`);
+console.log(`  Shared copy: ${destDir}`);

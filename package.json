@@ -16,6 +16,7 @@
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "dist": "npm run build && electron-builder --win",
     "postdist": "electron-rebuild -f -w better-sqlite3",
+    "release": "node scripts/release.mjs",
     "test": "node scripts/run-tests.mjs"
   },
   "dependencies": {
