@@ -1065,40 +1065,121 @@
       <div class="panel sync-map reveal">
         <svg class="sync-svg" viewBox="0 0 760 440" role="img" aria-label="A small team syncing one project through a shared folder">
           <defs>
-            <linearGradient id="syncGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#8b7bff"/><stop offset="0.5" stop-color="#f28c4c"/><stop offset="1" stop-color="#6ed7ff"/>
-            </linearGradient>
+            <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0" stop-color="#8b7bff" stop-opacity="0.16"/>
+              <stop offset="0.55" stop-color="#8b7bff" stop-opacity="0.05"/>
+              <stop offset="1" stop-color="#8b7bff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0" stop-color="#f28c4c" stop-opacity="0.55"/>
+              <stop offset="0.6" stop-color="#f28c4c" stop-opacity="0.12"/>
+              <stop offset="1" stop-color="#f28c4c" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="gTL" gradientUnits="userSpaceOnUse" x1="106" y1="85" x2="380" y2="220"><stop offset="0" stop-color="#8b7bff"/><stop offset="1" stop-color="#f28c4c"/></linearGradient>
+            <linearGradient id="gTR" gradientUnits="userSpaceOnUse" x1="654" y1="85" x2="380" y2="220"><stop offset="0" stop-color="#6ed7ff"/><stop offset="1" stop-color="#f28c4c"/></linearGradient>
+            <linearGradient id="gBL" gradientUnits="userSpaceOnUse" x1="106" y1="355" x2="380" y2="220"><stop offset="0" stop-color="#4cc38a"/><stop offset="1" stop-color="#f28c4c"/></linearGradient>
+            <linearGradient id="gBR" gradientUnits="userSpaceOnUse" x1="654" y1="355" x2="380" y2="220"><stop offset="0" stop-color="#c084f2"/><stop offset="1" stop-color="#f28c4c"/></linearGradient>
           </defs>
+
+          <!-- Depth: ambient glow behind the hub -->
+          <ellipse cx="380" cy="220" rx="300" ry="190" fill="url(#bgGlow)"/>
+
+          <!-- Broadcast rings radiating from the shared folder -->
+          <circle class="ring" cx="380" cy="220" r="34" fill="none" stroke="#f28c4c" stroke-width="1.4">
+            <animate attributeName="r" values="34;120" dur="4s" repeatCount="indefinite" begin="0s"/>
+            <animate attributeName="opacity" values="0.45;0" dur="4s" repeatCount="indefinite" begin="0s"/>
+          </circle>
+          <circle class="ring" cx="380" cy="220" r="34" fill="none" stroke="#f28c4c" stroke-width="1.4">
+            <animate attributeName="r" values="34;120" dur="4s" repeatCount="indefinite" begin="2s"/>
+            <animate attributeName="opacity" values="0.45;0" dur="4s" repeatCount="indefinite" begin="2s"/>
+          </circle>
+
+          <!-- Breathing halo on the hub -->
+          <circle class="hub-halo" cx="380" cy="220" r="72"/>
+
+          <!-- Spokes: base line + streaming flow, each teammate a distinct color converging to ember -->
           <g class="spokes">
-            <line x1="106" y1="85" x2="380" y2="220"/>
-            <line x1="654" y1="85" x2="380" y2="220"/>
-            <line x1="106" y1="355" x2="380" y2="220"/>
-            <line x1="654" y1="355" x2="380" y2="220"/>
+            <line class="spoke-base" x1="106" y1="85" x2="380" y2="220" stroke="url(#gTL)"/>
+            <line class="spoke-base" x1="654" y1="85" x2="380" y2="220" stroke="url(#gTR)"/>
+            <line class="spoke-base" x1="106" y1="355" x2="380" y2="220" stroke="url(#gBL)"/>
+            <line class="spoke-base" x1="654" y1="355" x2="380" y2="220" stroke="url(#gBR)"/>
+            <line class="spoke-flow" x1="106" y1="85" x2="380" y2="220" stroke="url(#gTL)"><animate attributeName="stroke-dashoffset" values="0;-15" dur="0.9s" repeatCount="indefinite"/></line>
+            <line class="spoke-flow" x1="654" y1="85" x2="380" y2="220" stroke="url(#gTR)"><animate attributeName="stroke-dashoffset" values="0;-15" dur="1s" repeatCount="indefinite"/></line>
+            <line class="spoke-flow" x1="106" y1="355" x2="380" y2="220" stroke="url(#gBL)"><animate attributeName="stroke-dashoffset" values="0;-15" dur="1.05s" repeatCount="indefinite"/></line>
+            <line class="spoke-flow" x1="654" y1="355" x2="380" y2="220" stroke="url(#gBR)"><animate attributeName="stroke-dashoffset" values="0;-15" dur="0.95s" repeatCount="indefinite"/></line>
           </g>
-          <circle class="pz" r="5"><animate attributeName="cx" values="106;380" dur="2.6s" repeatCount="indefinite" begin="0s"/><animate attributeName="cy" values="85;220" dur="2.6s" repeatCount="indefinite" begin="0s"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.6s" repeatCount="indefinite" begin="0s"/></circle>
-          <circle class="pz" r="5"><animate attributeName="cx" values="380;654" dur="2.6s" repeatCount="indefinite" begin="0.65s"/><animate attributeName="cy" values="220;85" dur="2.6s" repeatCount="indefinite" begin="0.65s"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.6s" repeatCount="indefinite" begin="0.65s"/></circle>
-          <circle class="pz" r="5"><animate attributeName="cx" values="106;380" dur="2.6s" repeatCount="indefinite" begin="1.3s"/><animate attributeName="cy" values="355;220" dur="2.6s" repeatCount="indefinite" begin="1.3s"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.6s" repeatCount="indefinite" begin="1.3s"/></circle>
-          <circle class="pz" r="5"><animate attributeName="cx" values="380;654" dur="2.6s" repeatCount="indefinite" begin="1.95s"/><animate attributeName="cy" values="220;355" dur="2.6s" repeatCount="indefinite" begin="1.95s"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.6s" repeatCount="indefinite" begin="1.95s"/></circle>
+
+          <!-- Publish pulses: each teammate's edits travel to the shared folder -->
+          <g class="pz" style="color:#8b7bff">
+            <circle class="halo" r="9"/><circle class="core" r="5"/>
+            <animateMotion path="M106,85 L380,220" dur="2.4s" begin="0s" repeatCount="indefinite" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="0s" repeatCount="indefinite"/>
+          </g>
+          <g class="pz" style="color:#6ed7ff">
+            <circle class="halo" r="9"/><circle class="core" r="5"/>
+            <animateMotion path="M654,85 L380,220" dur="2.4s" begin="0.6s" repeatCount="indefinite" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="0.6s" repeatCount="indefinite"/>
+          </g>
+          <g class="pz" style="color:#4cc38a">
+            <circle class="halo" r="9"/><circle class="core" r="5"/>
+            <animateMotion path="M106,355 L380,220" dur="2.4s" begin="1.2s" repeatCount="indefinite" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="1.2s" repeatCount="indefinite"/>
+          </g>
+          <g class="pz" style="color:#c084f2">
+            <circle class="halo" r="9"/><circle class="core" r="5"/>
+            <animateMotion path="M654,355 L380,220" dur="2.4s" begin="1.8s" repeatCount="indefinite" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="1.8s" repeatCount="indefinite"/>
+          </g>
+
+          <!-- Replay pulses: the shared folder broadcasts converged ops back to every machine -->
+          <g class="pz" style="color:#f28c4c">
+            <circle class="halo" r="8"/><circle class="core" r="4.2"/>
+            <animateMotion path="M380,220 L106,85" dur="2.4s" begin="1.2s" repeatCount="indefinite" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="1.2s" repeatCount="indefinite"/>
+          </g>
+          <g class="pz" style="color:#f28c4c">
+            <circle class="halo" r="8"/><circle class="core" r="4.2"/>
+            <animateMotion path="M380,220 L654,85" dur="2.4s" begin="1.8s" repeatCount="indefinite" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="1.8s" repeatCount="indefinite"/>
+          </g>
+          <g class="pz" style="color:#f28c4c">
+            <circle class="halo" r="8"/><circle class="core" r="4.2"/>
+            <animateMotion path="M380,220 L106,355" dur="2.4s" begin="2.4s" repeatCount="indefinite" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="2.4s" repeatCount="indefinite"/>
+          </g>
+          <g class="pz" style="color:#f28c4c">
+            <circle class="halo" r="8"/><circle class="core" r="4.2"/>
+            <animateMotion path="M380,220 L654,355" dur="2.4s" begin="3s" repeatCount="indefinite" calcMode="linear"/>
+            <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.22;0.8;1" dur="2.4s" begin="3s" repeatCount="indefinite"/>
+          </g>
+
+          <!-- Teammates: each a private local database, color-keyed -->
           <g>
-            <rect class="n-rect" x="36" y="52" width="140" height="66" rx="14"/>
+            <rect class="n-rect" x="36" y="52" width="140" height="66" rx="14" style="stroke:rgba(139,123,255,0.5)"/>
+            <rect x="48" y="70" width="4" height="30" rx="2" fill="#8b7bff"/>
             <text class="n-label" x="106" y="82" text-anchor="middle">TEAMMATE</text>
             <text class="n-sub" x="106" y="101" text-anchor="middle">Private local database</text>
           </g>
           <g>
-            <rect class="n-rect" x="584" y="52" width="140" height="66" rx="14"/>
+            <rect class="n-rect" x="584" y="52" width="140" height="66" rx="14" style="stroke:rgba(110,215,255,0.5)"/>
+            <rect x="596" y="70" width="4" height="30" rx="2" fill="#6ed7ff"/>
             <text class="n-label" x="654" y="82" text-anchor="middle">TEAMMATE</text>
             <text class="n-sub" x="654" y="101" text-anchor="middle">Private local database</text>
           </g>
           <g>
-            <rect class="n-rect" x="36" y="322" width="140" height="66" rx="14"/>
+            <rect class="n-rect" x="36" y="322" width="140" height="66" rx="14" style="stroke:rgba(76,195,138,0.5)"/>
+            <rect x="48" y="340" width="4" height="30" rx="2" fill="#4cc38a"/>
             <text class="n-label" x="106" y="352" text-anchor="middle">TEAMMATE</text>
             <text class="n-sub" x="106" y="371" text-anchor="middle">Private local database</text>
           </g>
           <g>
-            <rect class="n-rect" x="584" y="322" width="140" height="66" rx="14"/>
+            <rect class="n-rect" x="584" y="322" width="140" height="66" rx="14" style="stroke:rgba(192,132,242,0.5)"/>
+            <rect x="596" y="340" width="4" height="30" rx="2" fill="#c084f2"/>
             <text class="n-label" x="654" y="352" text-anchor="middle">TEAMMATE</text>
             <text class="n-sub" x="654" y="371" text-anchor="middle">Private local database</text>
           </g>
+
+          <!-- Shared folder hub -->
           <g>
             <rect class="n-hub" x="298" y="176" width="164" height="88" rx="16"/>
             <text class="n-label hub" x="380" y="211" text-anchor="middle">SHARED FOLDER</text>
