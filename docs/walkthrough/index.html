@@ -1151,6 +1151,7 @@
           <div class="stack-item"><span>Search</span><span>FTS5 over work item content</span></div>
           <div class="stack-item"><span>Renderer boundary</span><span>contextBridge IPC allowlist</span></div>
           <div class="stack-item"><span>Production CSP</span><span>self-only scripts, images, fonts</span></div>
+          <div class="stack-item"><span>Updates</span><span>Shared-folder, SHA256-verified, no network fetch</span></div>
         </div>
         <pre class="terminal reveal"><span class="dim">$ npm test</span>
 <span class="ok">ok</span> migrations create schema and device identity
@@ -1191,7 +1192,14 @@
           <div class="phase">Working now</div>
           <div>
             <h3>Execution views</h3>
-            <p>Dashboard, All Work, Board, Roadmap, Access Tracker, Decisions, Meetings, Risks & Blockers, Reports, Activity, Conflicts, Settings, and Onboarding.</p>
+            <p>Dashboard, All Work, Board, Roadmap, Access Tracker, Decisions, Meetings, Risks &amp; Blockers, Reports, Activity, Conflicts, Settings, and Onboarding. The Dashboard and Board are customizable per person: responsive layout, card sizing, show/hide, and drag-to-reorder.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <div class="phase">Working now</div>
+          <div>
+            <h3>In-app updates</h3>
+            <p>Checks the shared release folder on launch, verifies each installer against its SHA256, and updates in place. No network calls of its own: it reads the same synced folder the project already uses.</p>
           </div>
         </div>
         <div class="timeline-item reveal">
@@ -1204,8 +1212,8 @@
         <div class="timeline-item reveal">
           <div class="phase">Next</div>
           <div>
-            <h3>Packaging and release hardening</h3>
-            <p>Electron Builder NSIS packaging, signed release workflow, dependency update cadence, and broader installer validation.</p>
+            <h3>Release hardening</h3>
+            <p>NSIS packaging and a one-command release-to-shared-folder workflow now ship. Code signing (to remove the SmartScreen prompt and enable managed distribution), dependency update cadence, and broader installer validation are the remaining steps.</p>
           </div>
         </div>
       </div>
