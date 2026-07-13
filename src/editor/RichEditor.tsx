@@ -11,7 +11,6 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
@@ -31,7 +30,7 @@ import { Callout, CALLOUT_KINDS } from './extensions/Callout';
 import { Expand, ExpandSummary } from './extensions/Expand';
 import { SmartLink, setSmartLinkNavigate, invalidateSmartLinkCache } from './extensions/SmartLink';
 import { SlashCommand } from './extensions/SlashCommand';
-import { ListStyles } from './extensions/ListStyles';
+import { ListStyles, StyledTaskItem } from './extensions/ListStyles';
 import { SuggestionMenu, type MenuItem } from './SuggestionMenu';
 import { useApp } from '../store';
 import './editor.css';
@@ -93,12 +92,14 @@ function B({ onClick, active, title, children }: { onClick: () => void; active?:
 interface ListStyleOption { value: string; label: string; swatch?: string }
 
 /** A list toolbar button: main click toggles the list; the caret opens a menu to
-    pick a per-list style (applied to the current list, creating it if needed). */
-function ListSplitButton({ editor, icon, title, listType, styleKey, active, onToggle, options }: {
+    pick a style. Bullet/checkbox styles apply per line (to the selected item(s));
+    numbered style applies to the whole list. Creates the list first if needed. */
+function ListSplitButton({ editor, icon, title, listType, applyType, styleKey, active, onToggle, options }: {
   editor: Editor;
   icon: React.ReactNode;
   title: string;
   listType: 'bulletList' | 'orderedList' | 'taskList';
+  applyType: 'listItem' | 'taskItem' | 'orderedList'; // node the style is written to
   styleKey: 'listStyle' | 'shape';
   active: boolean;
   onToggle: () => void;
@@ -122,10 +123,12 @@ function ListSplitButton({ editor, icon, title, listType, styleKey, active, onTo
       else if (listType === 'orderedList') chain.toggleOrderedList();
       else chain.toggleTaskList();
     }
-    chain.updateAttributes(listType, { [styleKey]: value }).run();
+    // updateAttributes writes to every node of applyType within the selection,
+    // so a multi-line selection styles each of those lines.
+    chain.updateAttributes(applyType, { [styleKey]: value }).run();
     setOpen(false);
   };
-  const current = editor.getAttributes(listType)[styleKey] as string | undefined;
+  const current = editor.getAttributes(applyType)[styleKey] as string | undefined;
 
   return (
     <div className="tb-split" ref={ref}>
@@ -213,7 +216,7 @@ export default function RichEditor({ content, placeholder, onSave, onSelectionTe
       TableHeader,
       TableCell,
       TaskList,
-      TaskItem.configure({ nested: true }),
+      StyledTaskItem.configure({ nested: true }),
       ListStyles,
       Image.configure({ allowBase64: true }),
       Callout,
@@ -454,13 +457,13 @@ export default function RichEditor({ content, placeholder, onSave, onSelectionTe
         <B title="Subscript" active={editor.isActive('subscript')} onClick={() => editor.chain().focus().toggleSubscript().run()}><SubIcon size={14} /></B>
         <B title="Superscript" active={editor.isActive('superscript')} onClick={() => editor.chain().focus().toggleSuperscript().run()}><SupIcon size={14} /></B>
         <span className="tb-sep" />
-        <ListSplitButton editor={editor} title="Bulleted list" listType="bulletList" styleKey="listStyle"
+        <ListSplitButton editor={editor} title="Bulleted list" listType="bulletList" applyType="listItem" styleKey="listStyle"
           active={editor.isActive('bulletList')} onToggle={() => editor.chain().focus().toggleBulletList().run()}
           icon={<List size={14} />} options={BULLET_OPTIONS} />
-        <ListSplitButton editor={editor} title="Numbered list" listType="orderedList" styleKey="listStyle"
+        <ListSplitButton editor={editor} title="Numbered list" listType="orderedList" applyType="orderedList" styleKey="listStyle"
           active={editor.isActive('orderedList')} onToggle={() => editor.chain().focus().toggleOrderedList().run()}
           icon={<ListOrdered size={14} />} options={ORDERED_OPTIONS} />
-        <ListSplitButton editor={editor} title="Task list" listType="taskList" styleKey="shape"
+        <ListSplitButton editor={editor} title="Task list" listType="taskList" applyType="taskItem" styleKey="shape"
           active={editor.isActive('taskList')} onToggle={() => editor.chain().focus().toggleTaskList().run()}
           icon={<ListChecks size={14} />} options={TASK_OPTIONS} />
         <B title="Quote" active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()}><Quote size={14} /></B>

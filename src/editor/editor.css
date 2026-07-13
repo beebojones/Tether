@@ -251,49 +251,55 @@ button.tb.tb-split-caret:hover { color: var(--text-primary); }
   transform: rotate(45deg);
 }
 
-/* Shape resolves to the per-list data-shape when set, else the global default
-   (:root[data-checkbox-shape], set in App.tsx). The two selectors are grouped and
-   mutually exclusive (:not([data-shape]) vs [data-shape=…]) so they never conflict. */
+/* Checkbox shape is per-line (data-shape on the taskItem <li>); an item with no
+   explicit shape uses the global default (:root[data-checkbox-shape], set in
+   App.tsx). Grouped, mutually-exclusive selectors so they never conflict. */
 
 /* Square */
-:root[data-checkbox-shape='square'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox'],
-.ProseMirror ul[data-type='taskList'][data-shape='square'] input[type='checkbox'] { border-radius: 3px; }
+:root[data-checkbox-shape='square'] .ProseMirror ul[data-type='taskList'] > li:not([data-shape]) input[type='checkbox'],
+.ProseMirror ul[data-type='taskList'] > li[data-shape='square'] input[type='checkbox'] { border-radius: 3px; }
 
 /* Circle */
-:root[data-checkbox-shape='circle'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox'],
-.ProseMirror ul[data-type='taskList'][data-shape='circle'] input[type='checkbox'] { border-radius: 50%; }
+:root[data-checkbox-shape='circle'] .ProseMirror ul[data-type='taskList'] > li:not([data-shape]) input[type='checkbox'],
+.ProseMirror ul[data-type='taskList'] > li[data-shape='circle'] input[type='checkbox'] { border-radius: 50%; }
 
 /* Hexagon — clip-path can't stroke, so layer an inset panel-colored hexagon to
    fake an outline; checked fills fully. */
-:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox'],
-.ProseMirror ul[data-type='taskList'][data-shape='hexagon'] input[type='checkbox'] {
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] > li:not([data-shape]) input[type='checkbox'],
+.ProseMirror ul[data-type='taskList'] > li[data-shape='hexagon'] input[type='checkbox'] {
   border: none;
   border-radius: 0;
   background: var(--border-strong);
   clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
 }
-:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox']::before,
-.ProseMirror ul[data-type='taskList'][data-shape='hexagon'] input[type='checkbox']::before {
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] > li:not([data-shape]) input[type='checkbox']::before,
+.ProseMirror ul[data-type='taskList'] > li[data-shape='hexagon'] input[type='checkbox']::before {
   content: '';
   position: absolute;
   inset: 1.6px;
   background: var(--bg-panel);
   clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
 }
-:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox']:checked,
-:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList']:not([data-shape]) input[type='checkbox']:checked::before,
-.ProseMirror ul[data-type='taskList'][data-shape='hexagon'] input[type='checkbox']:checked,
-.ProseMirror ul[data-type='taskList'][data-shape='hexagon'] input[type='checkbox']:checked::before {
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] > li:not([data-shape]) input[type='checkbox']:checked,
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] > li:not([data-shape]) input[type='checkbox']:checked::before,
+.ProseMirror ul[data-type='taskList'] > li[data-shape='hexagon'] input[type='checkbox']:checked,
+.ProseMirror ul[data-type='taskList'] > li[data-shape='hexagon'] input[type='checkbox']:checked::before {
   background: var(--accent);
 }
+/* Center the check within the hexagon (its usable area is narrower + lower than
+   the square box the checkmark was positioned for). */
+:root[data-checkbox-shape='hexagon'] .ProseMirror ul[data-type='taskList'] > li:not([data-shape]) input[type='checkbox']:checked::after,
+.ProseMirror ul[data-type='taskList'] > li[data-shape='hexagon'] input[type='checkbox']:checked::after {
+  top: 3px;
+  left: 4.9px;
+}
 
-/* Per-list bullet marker styles (data-list-style on the <ul>) */
-.ProseMirror ul[data-list-style='disc']   { list-style-type: disc; }
-.ProseMirror ul[data-list-style='circle'] { list-style-type: circle; }
-.ProseMirror ul[data-list-style='square'] { list-style-type: square; }
-.ProseMirror ul[data-list-style='hexagon'] { list-style: none; }
-.ProseMirror ul[data-list-style='hexagon'] > li { position: relative; }
-.ProseMirror ul[data-list-style='hexagon'] > li::before {
+/* Per-line bullet marker styles (data-list-style on the <li>) */
+.ProseMirror li[data-list-style='disc']   { list-style-type: disc; }
+.ProseMirror li[data-list-style='circle'] { list-style-type: circle; }
+.ProseMirror li[data-list-style='square'] { list-style-type: square; }
+.ProseMirror li[data-list-style='hexagon'] { list-style: none; position: relative; }
+.ProseMirror li[data-list-style='hexagon']::before {
   content: '';
   position: absolute;
   left: -1.15em;
