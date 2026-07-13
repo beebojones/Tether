@@ -46,6 +46,10 @@
   cursor: pointer;
 }
 .dash-row:hover { background: var(--bg-hover); }
+.dash-row:focus-visible, .dash-activity:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
 .dash-row-title {
   flex: 1;
   min-width: 0;
@@ -76,6 +80,7 @@
   cursor: pointer;
 }
 .milestone-row:hover { background: var(--bg-hover); }
+.milestone-row:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
 .milestone-row > span:first-child { min-width: 200px; }
 
 .progress-track {

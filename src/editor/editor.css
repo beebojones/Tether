@@ -87,6 +87,8 @@ button.tb.tb-split-caret:hover { color: var(--text-primary); }
 .tb-sep { width: 1px; height: 18px; background: var(--border-subtle); margin: 0 5px; }
 .tb-block { padding: 3px 6px; font-size: var(--fs-sm); background: transparent; border-color: transparent; }
 .tb-block:hover { border-color: var(--border-default); }
+/* keep the global select chevron from overlapping the compact toolbar select */
+.editor-toolbar select.tb-block { padding-right: 22px; background-position: right 5px center; }
 
 .save-state-inline { font-size: var(--fs-xs); color: var(--text-faint); padding-right: 6px; }
 .save-state-inline.dirty, .save-state-inline.saving { color: var(--warning); }
@@ -357,7 +359,7 @@ button.tb.tb-split-caret:hover { color: var(--text-primary); }
   border: 1px solid;
 }
 .callout[data-kind='info'] { background: var(--info-soft); border-color: var(--accent-border); }
-.callout[data-kind='note'] { background: rgba(155, 110, 242, 0.1); border-color: rgba(155, 110, 242, 0.35); }
+.callout[data-kind='note'] { background: var(--accent-soft); border-color: var(--accent-border); }
 .callout[data-kind='warning'] { background: var(--warning-soft); border-color: rgba(242, 176, 76, 0.4); }
 .callout[data-kind='success'] { background: var(--success-soft); border-color: rgba(76, 195, 138, 0.4); }
 .callout[data-kind='error'] { background: var(--danger-soft); border-color: rgba(242, 100, 124, 0.4); }

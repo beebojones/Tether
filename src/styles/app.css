@@ -120,6 +120,7 @@
   transition: border-color var(--t-fast) var(--ease);
 }
 .search-hint:hover { border-color: var(--border-strong); }
+.search-hint:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
 
 .sync-pill {
   display: flex; align-items: center; gap: 7px;
@@ -131,6 +132,7 @@
   cursor: pointer;
   color: var(--text-secondary);
 }
+.sync-pill:hover { border-color: var(--border-strong); background: var(--bg-hover); }
 .sync-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
 .sync-pill .dot.idle { background: var(--success); }
 .sync-pill .dot.syncing { background: var(--accent); animation: pulse 1.2s infinite; }

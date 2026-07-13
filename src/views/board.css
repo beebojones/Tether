@@ -54,6 +54,7 @@
 }
 .board-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
 .board-card:active { cursor: grabbing; }
+.board-card:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
 
 .board-card-top { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
 .board-card-title { font-size: var(--fs-sm); line-height: 1.4; margin-bottom: 8px; }

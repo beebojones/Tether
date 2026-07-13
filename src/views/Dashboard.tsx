@@ -137,7 +137,9 @@ export default function Dashboard() {
         <Card {...cardProps('activity')} title="Recent activity" wide onMore={() => navigate({ view: 'activity' })}>
           {recent.length === 0 && <Empty text="No activity yet." />}
           {recent.map((a) => (
-            <div key={a.id} className="dash-activity" onClick={() => a.itemId && openItem(a.itemId)} role={a.itemId ? 'button' : undefined}>
+            <div key={a.id} className="dash-activity" onClick={() => a.itemId && openItem(a.itemId)}
+              role={a.itemId ? 'button' : undefined} tabIndex={a.itemId ? 0 : undefined}
+              onKeyDown={(e) => { if (e.key === 'Enter' && a.itemId) openItem(a.itemId); }}>
               <span className="muted" style={{ whiteSpace: 'nowrap', fontSize: 'var(--fs-xs)' }}>{fmtDateTime(a.at)}</span>
               <span style={{ fontSize: 'var(--fs-sm)' }}>{describeActivity(a, users)}</span>
             </div>

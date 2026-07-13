@@ -72,6 +72,7 @@
   transition: border-color var(--t-fast) var(--ease);
 }
 .link-row:hover { border-color: var(--border-strong); }
+.link-row:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
 .link-kind {
   font-size: var(--fs-xs);
   color: var(--text-muted);
@@ -106,6 +107,8 @@
 }
 .activity-row.has-diff { cursor: pointer; padding-left: 6px; margin-left: -6px; border-radius: var(--r-sm); }
 .activity-row.has-diff:hover { background: var(--bg-hover); }
+.activity-row.has-diff:focus-visible,
+.activity-row[tabindex]:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
 .diff-tag {
   margin-left: auto;
   font-size: 10px;

@@ -81,8 +81,37 @@ input[type='text'], input[type='date'], input[type='number'], textarea, select {
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--border-focus); }
 input::placeholder, textarea::placeholder { color: var(--text-faint); }
 
-select { cursor: pointer; }
-select option { background: var(--bg-raised); }
+select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  /* custom chevron (data-URI can't read a CSS var; %237d7599 = --text-muted) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237d7599' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  padding-right: 28px;
+}
+select:hover { border-color: var(--border-strong); }
+select option { background: var(--bg-raised); color: var(--text-primary); }
+
+/* Theme the bright browser-default glyphs on dark fields */
+input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.62) brightness(1.15);
+  opacity: 0.85;
+  transition: opacity var(--t-fast) var(--ease);
+}
+input[type='date']::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { filter: invert(0.55); opacity: 0.7; }
+
+/* Field focus ring consistent with buttons/checkboxes; disabled styling */
+input[type='text']:focus-visible, input[type='date']:focus-visible,
+input[type='number']:focus-visible, textarea:focus-visible, select:focus-visible {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+input:disabled, textarea:disabled, select:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* Native checkboxes, themed to match. The editor's task-list checkboxes have their
    own (more specific) shape styling and are unaffected. */
