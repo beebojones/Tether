@@ -7,6 +7,7 @@
   "private": true,
   "author": "John Crouch",
   "scripts": {
+    "predev": "node scripts/predev.mjs",
     "dev": "concurrently -k \"npm:dev:vite\" \"npm:dev:electron\"",
     "dev:vite": "vite",
     "dev:electron": "node scripts/dev-electron.mjs",

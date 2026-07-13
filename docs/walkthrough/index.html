@@ -450,14 +450,22 @@
     .sync-map { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
     .sync-map .caption { position: static; transform: none; left: auto; bottom: auto; }
     .sync-svg { width: 100%; max-width: 680px; height: auto; display: block; }
-    .sync-svg .spokes line { stroke: url(#syncGrad); stroke-width: 2; opacity: 0.6; }
+    .sync-svg .spoke-base { fill: none; stroke-width: 2; opacity: 0.30; stroke-linecap: round; }
+    .sync-svg .spoke-flow { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 2 13; opacity: 0.75; }
     .sync-svg .n-rect { fill: rgba(12, 10, 23, 0.86); stroke: rgba(180, 168, 240, 0.22); }
-    .sync-svg .n-hub { fill: rgba(20, 14, 30, 0.92); stroke: rgba(242, 140, 76, 0.42); stroke-width: 1.4; }
+    .sync-svg .n-hub { fill: rgba(20, 14, 30, 0.92); stroke: rgba(242, 140, 76, 0.55); stroke-width: 1.4; }
     .sync-svg .n-label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; fill: var(--text); }
     .sync-svg .n-label.hub { fill: var(--ember); }
     .sync-svg .n-sub { font-family: var(--sans); font-size: 11px; fill: var(--faint); }
-    .sync-svg .pz { fill: var(--ember); filter: drop-shadow(0 0 6px var(--ember)); }
-    @media (prefers-reduced-motion: reduce) { .sync-svg .pz { opacity: 0 !important; } }
+    .sync-svg .pz .core { fill: currentColor; filter: drop-shadow(0 0 5px currentColor); }
+    .sync-svg .pz .halo { fill: currentColor; opacity: 0.22; }
+    .sync-svg .hub-halo { fill: url(#hubGlow); animation: syncBreath 3.4s ease-in-out infinite; }
+    @keyframes syncBreath { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.72; } }
+    @media (prefers-reduced-motion: reduce) {
+      .sync-svg .pz, .sync-svg .spoke-flow, .sync-svg .ring { display: none; }
+      .sync-svg .hub-halo { animation: none; opacity: 0.45; }
+      .sync-svg .spoke-base { opacity: 0.5; }
+    }
 
     .caption {
       position: absolute;
