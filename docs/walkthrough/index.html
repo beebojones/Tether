@@ -579,6 +579,114 @@
       text-transform: uppercase;
     }
 
+    /* ---- Sync: how a change travels (3-step strip) ---- */
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 26px;
+    }
+    .flow-step {
+      position: relative;
+      padding: 20px 20px 20px 56px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+    .flow-step .num {
+      position: absolute;
+      left: 16px;
+      top: 18px;
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, var(--violet), var(--ember));
+    }
+    .flow-step h4 { font-size: 15px; margin-bottom: 5px; }
+    .flow-step p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .flow-step code {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--cyan);
+      background: rgba(110, 215, 255, 0.08);
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+    @media (max-width: 900px) { .flow-steps { grid-template-columns: 1fr; } }
+
+    /* ---- Decision: why not Neon ---- */
+    #decision .versus {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 32px;
+    }
+    .vs-col {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .vs-col.win { border-color: rgba(76, 195, 138, 0.4); box-shadow: 0 0 0 1px rgba(76, 195, 138, 0.14), 0 30px 70px rgba(4, 3, 10, 0.4); }
+    .vs-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+    .vs-head .badge {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .vs-col.win .badge { color: var(--green); background: rgba(76, 195, 138, 0.14); }
+    .vs-col.alt .badge { color: var(--yellow); background: rgba(242, 176, 76, 0.14); }
+    .vs-head h3 { font-size: 18px; }
+    .vs-head p { color: var(--faint); font-size: 12.5px; margin-top: 2px; }
+    .vs-row {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 12px;
+      padding: 14px 24px;
+      border-top: 1px solid rgba(180, 168, 240, 0.08);
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .vs-row .ic { font-size: 15px; line-height: 1.4; }
+    .vs-row b { color: var(--text); font-weight: 600; }
+    .vs-row span { color: var(--muted); }
+    .win .vs-row .ic { color: var(--green); }
+    .alt .vs-row .ic { color: var(--yellow); }
+    .vs-foot {
+      padding: 16px 24px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--muted);
+      background: rgba(139, 123, 255, 0.05);
+    }
+    .decision-note {
+      margin-top: 26px;
+      padding: 18px 22px;
+      border-left: 2px solid var(--line-strong);
+      background: rgba(242, 140, 76, 0.06);
+      border-radius: 0 12px 12px 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .decision-note b { color: var(--text); }
+    @media (max-width: 900px) { #decision .versus { grid-template-columns: 1fr; } }
+
     .reveal {
       opacity: 0;
       transform: translateY(34px);
@@ -817,6 +925,7 @@
       <li><a href="#problem">Problem</a></li>
       <li><a href="#workspace">Workspace</a></li>
       <li><a href="#sync">Sync</a></li>
+      <li><a href="#decision">Why not Neon</a></li>
       <li><a href="#reports">Reports</a></li>
       <li><a href="#security">Security</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
@@ -930,6 +1039,64 @@
         <div class="node b"><div><b>Mark</b><span>Private local database</span></div></div>
         <p class="caption">Offline edits queue locally, field-level changes converge, and title/body conflicts are surfaced for human review.</p>
       </div>
+    </div>
+
+    <div class="inner" style="padding-top: 8px;">
+      <div class="flow-steps">
+        <div class="flow-step reveal">
+          <span class="num">1</span>
+          <h4>Edit locally</h4>
+          <p>John changes a status. Tether writes it to his own SQLite database and appends a field-level op to a local log. Instant, and offline-safe.</p>
+        </div>
+        <div class="flow-step reveal">
+          <span class="num">2</span>
+          <h4>Publish a batch</h4>
+          <p>Tether drops an immutable <code>ops/&lt;device&gt;/…jsonl</code> file into the shared folder. Each device writes only its own directory, so there is no file locking and no shared database.</p>
+        </div>
+        <div class="flow-step reveal">
+          <span class="num">3</span>
+          <h4>Replay on Mark's machine</h4>
+          <p>Mark's Tether reads new batches, skips ops it has seen, and replays the rest. Lamport clocks order edits; concurrent text goes to the Conflicts screen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="decision">
+    <div class="inner">
+      <div class="eyebrow reveal">The architecture question</div>
+      <h2 class="reveal">Why not just put it in Neon?</h2>
+      <p class="lead reveal">A hosted Postgres like Neon is a great fit for a public demo or a fully approved cloud app. For two people syncing a work project, it quietly adds a database to secure, credentials to manage, and data leaving the boundary, without removing the hard part. Here is the honest comparison.</p>
+
+      <div class="versus">
+        <div class="vs-col win reveal">
+          <div class="vs-head">
+            <span class="badge">Shipped in Tether</span>
+            <div><h3>Shared-folder op-log</h3><p>OneDrive / SharePoint + local SQLite</p></div>
+          </div>
+          <div class="vs-row"><span class="ic">✓</span><div><b>Data stays put.</b> <span>Project data never leaves the folder you already trust. Its ACLs, audit, encryption, and retention apply as-is.</span></div></div>
+          <div class="vs-row"><span class="ic">✓</span><div><b>Nothing new to approve.</b> <span>No account, no provisioning, no security review of a third-party database. Uses infrastructure you already have.</span></div></div>
+          <div class="vs-row"><span class="ic">✓</span><div><b>Works offline by design.</b> <span>Every device is fully usable with no network. Edits queue and flush when the folder returns.</span></div></div>
+          <div class="vs-row"><span class="ic">✓</span><div><b>No credentials, no secrets.</b> <span>Tether makes zero network calls of its own. No connection string to leak, rotate, or hard-code.</span></div></div>
+          <div class="vs-row"><span class="ic">✓</span><div><b>Inspectable.</b> <span>Sync artifacts are human-readable JSONL; the merge and audit logic runs locally where you can review it.</span></div></div>
+          <div class="vs-foot">Cost: $0. Runs on what the team already pays for.</div>
+        </div>
+
+        <div class="vs-col alt reveal">
+          <div class="vs-head">
+            <span class="badge">Neon / hosted Postgres</span>
+            <div><h3>Managed cloud database</h3><p>External service over the network</p></div>
+          </div>
+          <div class="vs-row"><span class="ic">!</span><div><b>Data leaves the boundary.</b> <span>Project records move to a third-party host, often the exact thing an employer's review is meant to prevent.</span></div></div>
+          <div class="vs-row"><span class="ic">!</span><div><b>New thing to approve.</b> <span>Account, provisioning, access review, backup/retention decisions, and an ongoing operational owner.</span></div></div>
+          <div class="vs-row"><span class="ic">!</span><div><b>Offline still needs a cache.</b> <span>A server DB doesn't remove the hard part. You would still build a local cache and merge layer on top.</span></div></div>
+          <div class="vs-row"><span class="ic">!</span><div><b>Credentials to manage.</b> <span>Connection strings and secrets to store, rotate, and keep out of source control.</span></div></div>
+          <div class="vs-row"><span class="ic">!</span><div><b>Network dependency.</b> <span>Latency, outages, and a live endpoint become part of the day-to-day experience.</span></div></div>
+          <div class="vs-foot">Great later, behind the same interface, once it's approved.</div>
+        </div>
+      </div>
+
+      <p class="decision-note reveal"><b>Not a dead end.</b> Tether's sync sits behind a transport interface. The op-log and merge rules stay the same, so an approved backend later (Azure SQL, an internal API, or yes, Postgres) is a swap, not a rewrite. We chose the path that ships today without asking anyone's permission, and kept the door open to the one that might need it.</p>
     </div>
   </section>
 
@@ -1059,14 +1226,28 @@
   </section>
 
   <script>
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) entry.target.classList.add('visible');
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+    // Reduced-motion (and print) users get all content immediately — no scroll-triggered reveals.
+    // ?reveal=all forces the same static state (used for capturing full-page screenshots).
+    const captureMode = new URLSearchParams(location.search).get('reveal') === 'all';
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches || captureMode;
+    // Capture mode: cap the 100vh hero to natural height, optionally scroll to a section.
+    if (captureMode) {
+      const css = document.createElement('style');
+      css.textContent = 'section{min-height:auto !important;padding-top:64px !important;padding-bottom:64px !important;} #hero{min-height:auto !important;padding:120px 0 90px !important;}';
+      document.head.appendChild(css);
+    }
+    if (reduceMotion) {
+      document.querySelectorAll('.reveal').forEach((el) => el.classList.add('visible'));
+    } else {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-    document.querySelectorAll('#hero .reveal').forEach((el) => el.classList.add('visible'));
+      document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+      document.querySelectorAll('#hero .reveal').forEach((el) => el.classList.add('visible'));
+    }
 
     (function heroCanvas() {
       const canvas = document.getElementById('heroCanvas');
