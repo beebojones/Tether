@@ -160,6 +160,16 @@ export function registerIpc(deps: IpcDeps): void {
 
   // ---------- users / milestones / releases / views ----------
   ipcMain.handle('users:list', () => store.listUsers());
+  ipcMain.handle('users:setAvatar', (_e, id: string, avatar: string | null) => {
+    if (avatar !== null) {
+      if (typeof avatar !== 'string' || !avatar.startsWith('data:image/'))
+        throw new Error('Avatar must be an image data URL or null');
+      if (avatar.length > 700_000) throw new Error('Avatar image is too large (keep it under ~500KB)');
+    }
+    const u = store.setUserAvatar(id, avatar);
+    afterMutation();
+    return u;
+  });
   ipcMain.handle('milestones:list', () => store.listMilestones());
   ipcMain.handle('milestones:upsert', (_e, m) => {
     const rec = store.upsertMilestone(m);

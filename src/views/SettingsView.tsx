@@ -1,14 +1,15 @@
 // Settings: identity, sync folder, sample data, backup, data locations, about.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FolderOpen, Database, Download, Trash2, RefreshCw } from 'lucide-react';
 import { api, type AppInfo } from '../api';
 import { useApp } from '../store';
-import { fmtDateTime } from '../components/ui';
+import { fmtDateTime, Avatar } from '../components/ui';
 
 export default function SettingsView() {
-  const { settings, setSettings, syncStatus } = useApp();
+  const { settings, setSettings, syncStatus, users, refreshMeta } = useApp();
   const [info, setInfo] = useState<AppInfo | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const avatarInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void api.app.info().then(setInfo);
@@ -17,6 +18,44 @@ export default function SettingsView() {
   const flash = (m: string) => {
     setMsg(m);
     setTimeout(() => setMsg(null), 4000);
+  };
+
+  const currentUser = settings?.currentUser ?? null;
+  const dbUser = users.find((u) => u.id === currentUser?.id) ?? null;
+
+  // Downscale any chosen image to a 256px square (cover) data URL, then store it.
+  const onAvatarFile = (file: File | undefined) => {
+    if (!file || !currentUser) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const S = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = S;
+        canvas.height = S;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const scale = Math.max(S / img.width, S / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+        void api.users.setAvatar(currentUser.id, canvas.toDataURL('image/png')).then(() => {
+          void refreshMeta();
+          flash('Avatar updated.');
+        });
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeAvatar = () => {
+    if (!currentUser) return;
+    void api.users.setAvatar(currentUser.id, null).then(() => {
+      void refreshMeta();
+      flash('Avatar removed.');
+    });
   };
 
   const chooseSyncFolder = async () => {
@@ -49,9 +88,31 @@ export default function SettingsView() {
       {msg && <div className="toast" style={{ position: 'static', marginBottom: 14 }}>{msg}</div>}
 
       <Section title="Identity">
-        <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
+          <Avatar user={dbUser} size="lg" />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => avatarInput.current?.click()} disabled={!currentUser}>
+              {dbUser?.avatar ? 'Change avatar…' : 'Set avatar…'}
+            </button>
+            {dbUser?.avatar && <button className="danger" onClick={removeAvatar}>Remove</button>}
+          </div>
+          <input
+            ref={avatarInput}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            hidden
+            onChange={(e) => {
+              onAvatarFile(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+        </div>
+        <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 6 }}>
           Signed in as <strong style={{ color: 'var(--text-primary)' }}>{settings?.currentUser?.name}</strong> ({settings?.currentUser?.id}).
           Identity marks who created and changed each record.
+        </p>
+        <p className="muted" style={{ fontSize: 'var(--fs-xs)' }}>
+          Make one with the Neon Avatar Maker (tools/avatar-maker), export a chip, and set it here. Your avatar syncs to teammates.
         </p>
       </Section>
 

@@ -305,4 +305,9 @@ UPDATE milestones SET created_at = datetime('now'), updated_at = datetime('now')
 UPDATE releases SET created_at = datetime('now'), updated_at = datetime('now') WHERE created_at = '';
 `,
   },
+  {
+    version: 4,
+    name: 'user-avatar',
+    sql: `ALTER TABLE users ADD COLUMN avatar TEXT;`,
+  },
 ];

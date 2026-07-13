@@ -31,13 +31,13 @@ export const TYPE_COLOR: Record<ItemType, string> = {
   feature: '#9b6ef2',
   requirement: '#4cb8c4',
   story: '#4cb8c4',
-  decision: '#f2b04c',
+  decision: 'var(--warning)',
   risk: '#f2864c',
   blocker: 'var(--danger)',
   access: '#e8c14c',
-  meeting: '#6ec487',
+  meeting: 'var(--success)',
   idea: '#d9a5f0',
-  question: '#a8b2c9',
+  question: 'var(--text-secondary)',
   defect: 'var(--danger)',
   research: '#6ec4b8',
 };
@@ -96,8 +96,20 @@ export function Avatar({ user, size }: { user: User | null; size?: 'lg' }) {
     );
   }
   return (
-    <span className={`avatar ${size ?? ''}`} style={{ background: user.color }} title={user.name}>
-      {user.initials}
+    <span
+      className={`avatar ${size ?? ''}`}
+      style={user.avatar ? { padding: 0, overflow: 'hidden' } : { background: user.color }}
+      title={user.name}
+    >
+      {user.avatar ? (
+        <img
+          src={user.avatar}
+          alt={user.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', borderRadius: 'inherit' }}
+        />
+      ) : (
+        user.initials
+      )}
     </span>
   );
 }

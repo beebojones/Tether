@@ -610,7 +610,22 @@ export class Store {
   }
 
   listUsers(): User[] {
-    return (this.db.prepare('SELECT id, name, initials, color, created_at AS createdAt FROM users').all() as User[]);
+    return (this.db.prepare('SELECT id, name, initials, color, avatar, created_at AS createdAt FROM users').all() as User[]);
+  }
+
+  /** Set (or clear, with null) a user's avatar image. Emits a synced 'set' op. */
+  setUserAvatar(id: string, avatar: string | null): User | null {
+    const exists = this.db.prepare('SELECT 1 FROM users WHERE id=?').get(id);
+    if (!exists) return null;
+    const tx = this.db.transaction(() => {
+      this.db.prepare('UPDATE users SET avatar=? WHERE id=?').run(avatar, id);
+      this.localSet('user', id, { avatar });
+    });
+    tx();
+    this.events.onChange({ entity: 'user', entityId: id });
+    return this.db
+      .prepare('SELECT id, name, initials, color, avatar, created_at AS createdAt FROM users WHERE id=?')
+      .get(id) as User;
   }
 
   // ---------- milestones / releases ----------
@@ -891,8 +906,8 @@ export class Store {
       user: () => {
         const r = record as unknown as User;
         this.db
-          .prepare('INSERT OR IGNORE INTO users(id, name, initials, color, created_at) VALUES(?,?,?,?,?)')
-          .run(r.id, r.name, r.initials, r.color, r.createdAt);
+          .prepare('INSERT OR IGNORE INTO users(id, name, initials, color, avatar, created_at) VALUES(?,?,?,?,?,?)')
+          .run(r.id, r.name, r.initials, r.color, r.avatar ?? null, r.createdAt);
       },
       saved_view: () => {
         const r = record as unknown as SavedView;
@@ -1041,7 +1056,7 @@ export class Store {
       comment: { body: 'body', bodyText: 'body_text', updatedAt: 'updated_at', deleted: 'deleted' },
       milestone: { name: 'name', description: 'description', targetDate: 'target_date', status: 'status', sort: 'sort', deleted: 'deleted' },
       release: { name: 'name', version: 'version', targetDate: 'target_date', status: 'status', goals: 'goals', notes: 'notes', deleted: 'deleted' },
-      user: { name: 'name', initials: 'initials', color: 'color' },
+      user: { name: 'name', initials: 'initials', color: 'color', avatar: 'avatar' },
       saved_view: { name: 'name', config: 'config', pinned: 'pinned', deleted: 'deleted' },
       attachment: { description: 'description', deleted: 'deleted' },
     };

@@ -340,6 +340,7 @@ export interface User {
   name: string;
   initials: string;
   color: string;
+  avatar?: string | null; // image data URL; null/absent = render initials on color
   createdAt: string;
 }
 

@@ -53,7 +53,10 @@ const api = {
   activity: {
     for: (itemId: string | null, limit?: number) => invoke('activity:for', itemId, limit),
   },
-  users: { list: () => invoke('users:list') },
+  users: {
+    list: () => invoke('users:list'),
+    setAvatar: (id: string, avatar: string | null) => invoke('users:setAvatar', id, avatar),
+  },
   milestones: {
     list: () => invoke('milestones:list'),
     upsert: (m: unknown) => invoke('milestones:upsert', m),
