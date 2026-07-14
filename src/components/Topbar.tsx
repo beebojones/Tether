@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowLeft, Search, RefreshCw } from 'lucide-react';
 import { useApp } from '../store';
 import { api } from '../api';
@@ -20,9 +21,26 @@ const ROUTE_TITLES: Record<string, string> = {
 
 export default function Topbar() {
   const { route, back, routeStack, syncStatus, setPalette, navigate } = useApp();
+  const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const title = route.view === 'items' ? route.title : ROUTE_TITLES[route.view] ?? '';
   const sync = syncStatus;
+
+  // Click the pill to force a sync ("re-save"). The icon spins for at least ~700ms
+  // even when the sync is instant, so the click always visibly reacts, then a brief
+  // "Saved" confirms it's as synced as it can be.
+  const reSave = async () => {
+    if (sync?.state === 'disabled') { navigate({ view: 'settings' }); return; }
+    setSaving(true);
+    try {
+      await Promise.all([api.sync.now(), new Promise((r) => setTimeout(r, 700))]);
+    } finally {
+      setSaving(false);
+    }
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 1500);
+  };
 
   const syncLabel = !sync || sync.state === 'disabled'
     ? 'Local only'
@@ -51,12 +69,12 @@ export default function Topbar() {
       </div>
       <button
         className="sync-pill"
-        onClick={() => (sync?.state === 'disabled' ? navigate({ view: 'settings' }) : void api.sync.now())}
-        title={sync?.lastError ?? (sync?.folder ? `Sync folder: ${sync.folder}` : 'Configure sync in Settings')}
+        onClick={() => void reSave()}
+        title={sync?.state === 'disabled' ? 'Configure sync in Settings' : (sync?.lastError ?? (sync?.folder ? `Sync now — folder: ${sync.folder}` : 'Sync now'))}
       >
         <span className={`dot ${sync?.state ?? 'disabled'}`} />
-        {syncLabel}
-        {sync && sync.state !== 'disabled' && <RefreshCw size={12} />}
+        {savedFlash ? 'Saved' : syncLabel}
+        {sync && sync.state !== 'disabled' && <RefreshCw size={12} className={saving ? 'spin' : ''} />}
       </button>
     </header>
   );

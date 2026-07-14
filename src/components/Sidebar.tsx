@@ -97,13 +97,18 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      <div className="sidebar-footer">
+      <button
+        type="button"
+        className={`sidebar-footer ${route.view === 'settings' ? 'active' : ''}`}
+        onClick={() => navigate({ view: 'settings' })}
+        title="Open settings"
+      >
         <Avatar user={user} size="lg" />
         <div className="who">
           <div className="n">{user?.name ?? 'Not set'}</div>
           <div className="r">{syncStatus?.folder ? 'Shared project' : 'Local only'}</div>
         </div>
-      </div>
+      </button>
     </aside>
   );
 }

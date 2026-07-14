@@ -1,6 +1,7 @@
 // Transparent project health: computed from named signals, basis always shown.
 import { useState } from 'react';
 import { Modal } from './ui';
+import { useApp, type Route } from '../store';
 
 interface Signals {
   blocked: number;
@@ -12,13 +13,14 @@ interface Signals {
 
 export default function ProjectHealth(signals: Signals) {
   const [show, setShow] = useState(false);
+  const navigate = useApp((s) => s.navigate);
 
-  const reasons: { text: string; weight: number }[] = [];
-  if (signals.blocked > 0) reasons.push({ text: `${signals.blocked} blocked item${signals.blocked > 1 ? 's' : ''}`, weight: 2 });
-  if (signals.overdue > 0) reasons.push({ text: `${signals.overdue} overdue item${signals.overdue > 1 ? 's' : ''}`, weight: 2 });
-  if (signals.openHighRisks > 0) reasons.push({ text: `${signals.openHighRisks} unresolved high risk${signals.openHighRisks > 1 ? 's' : ''}`, weight: 2 });
-  if (signals.accessWaiting > 2) reasons.push({ text: `${signals.accessWaiting} access requests unresolved`, weight: 1 });
-  if (signals.openDecisions > 3) reasons.push({ text: `${signals.openDecisions} decisions open`, weight: 1 });
+  const reasons: { text: string; weight: number; route: Route }[] = [];
+  if (signals.blocked > 0) reasons.push({ text: `${signals.blocked} blocked item${signals.blocked > 1 ? 's' : ''}`, weight: 2, route: { view: 'risks' } });
+  if (signals.overdue > 0) reasons.push({ text: `${signals.overdue} overdue item${signals.overdue > 1 ? 's' : ''}`, weight: 2, route: { view: 'items', title: 'All Work' } });
+  if (signals.openHighRisks > 0) reasons.push({ text: `${signals.openHighRisks} unresolved high risk${signals.openHighRisks > 1 ? 's' : ''}`, weight: 2, route: { view: 'risks' } });
+  if (signals.accessWaiting > 2) reasons.push({ text: `${signals.accessWaiting} access requests unresolved`, weight: 1, route: { view: 'access' } });
+  if (signals.openDecisions > 3) reasons.push({ text: `${signals.openDecisions} decisions open`, weight: 1, route: { view: 'decisions' } });
 
   const score = reasons.reduce((s, r) => s + r.weight, 0);
   const level = score === 0 ? 'good' : score <= 3 ? 'watch' : 'at-risk';
@@ -42,9 +44,15 @@ export default function ProjectHealth(signals: Signals) {
             </p>
           ) : (
             <>
-              <p style={{ fontSize: 'var(--fs-sm)', marginBottom: 8 }} className="muted">This status is based on:</p>
-              <ul style={{ paddingLeft: 20, fontSize: 'var(--fs-sm)', lineHeight: 1.8 }}>
-                {reasons.map((r) => <li key={r.text}>{r.text}</li>)}
+              <p style={{ fontSize: 'var(--fs-sm)', marginBottom: 8 }} className="muted">This status is based on (click to go there):</p>
+              <ul className="health-reasons">
+                {reasons.map((r) => (
+                  <li key={r.text}>
+                    <button type="button" onClick={() => { navigate(r.route); setShow(false); }}>
+                      {r.text}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </>
           )}

@@ -85,10 +85,20 @@
 .sidebar-footer {
   padding: 10px 12px;
   border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
   display: flex;
   align-items: center;
   gap: 9px;
+  width: 100%;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease);
 }
+.sidebar-footer:hover { background: var(--bg-hover); }
+.sidebar-footer.active { background: var(--bg-hover); }
+.sidebar-footer:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
 .sidebar-footer .who { flex: 1; min-width: 0; }
 .sidebar-footer .who .n { font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sidebar-footer .who .r { font-size: var(--fs-xs); color: var(--text-muted); }
@@ -134,6 +144,26 @@
 }
 .sync-pill:hover { border-color: var(--border-strong); background: var(--bg-hover); }
 .sync-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+.sync-pill .spin { animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Project-health modal: clickable reasons that jump to the relevant view */
+.health-reasons { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 5px; }
+.health-reasons button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.health-reasons button:hover { border-color: var(--accent); background: var(--bg-hover); }
+.health-reasons button:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
 .sync-pill .dot.idle { background: var(--success); }
 .sync-pill .dot.syncing { background: var(--accent); animation: pulse 1.2s infinite; }
 .sync-pill .dot.offline { background: var(--warning); }
