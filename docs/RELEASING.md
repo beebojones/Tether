@@ -5,18 +5,33 @@
 ```bash
 npm version patch            # or minor/major — updates package.json + git tag
 npm test                     # must be green
-npm run dist                 # → release/Tether Setup <version>-{arm64,x64}.exe
+npm run dist                 # → release/Tether Setup <version>.exe
 ```
 
-Two installers are produced: **arm64** (John's Windows-on-ARM machine) and **x64**
-(standard corporate laptops — Mark Bidinger). electron-builder rebuilds the native SQLite
-module per architecture during packaging; the `postdist` script restores the local
-arm64 build so `npm run dev` and `npm test` keep working afterwards. Close any
-running Tether/Electron instance before `npm run dist` — an open app locks the
-native module and `release/` directory.
+One installer covers **both** arm64 (John's Windows-on-ARM machine) and x64
+(standard corporate laptops — Mark Bidinger); NSIS picks the right binaries for
+the machine it's run on. `npm run dist` (`scripts/dist.mjs`) builds the app,
+packages it, then rebuilds the native SQLite module for local dev (whatever this
+machine's own arch is), so `npm run dev` and `npm test` keep working afterwards.
+Close any running Tether/Electron instance before `npm run dist` — an open app
+locks the native module and `release/` directory.
 
-The installer is **per-user** (no admin rights needed) and creates Start-menu and
-desktop shortcuts. Uninstall via Windows Settings → Apps.
+The installer is **one-click** (Discord/Slack-style — no wizard pages) and
+**per-user** (no admin rights needed). Uninstall via Windows Settings → Apps.
+
+### Why packaging happens outside `C:\Workspace`
+
+On managed McKesson laptops, the endpoint agent (SentinelOne, alongside Windows
+Defender) locks newly-written executables specifically inside `C:\Workspace` long
+enough that electron-builder's rename-into-place step fails with
+`EPERM: operation not permitted, rename ... unpacked`. Confirmed by building to a
+location outside `C:\Workspace`, which succeeds immediately with no lock at all.
+
+`scripts/dist.mjs` works around this automatically: it packages into a temp folder
+outside `C:\Workspace`, then copies just the finished installer (not the ~500MB
+unpacked app folders) into this project's `release/`. A short retry loop remains
+as a safety net in case that temp location is ever also monitored. No IT ticket
+or admin rights needed — this is transparent to `npm run dist` / `npm run release`.
 
 ## Distribute to Mark Bidinger (documented manual workflow)
 
