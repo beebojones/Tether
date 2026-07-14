@@ -137,6 +137,7 @@ let mockDensity: 'compact' | 'comfortable' = 'compact';
 let mockCheckboxShape: 'square' | 'circle' | 'hexagon' = 'circle';
 let mockProjectName = 'Project Atlas';
 let mockViewPrefs: import('@shared/types').ViewPrefs = {};
+let mockUpdateCb: ((info: { version: string; current: string }) => void) | null = null;
 const listeners = new Set<(w: { entity: string; entityId: string }) => void>();
 const emit = () => listeners.forEach((l) => l({ entity: '*', entityId: '*' }));
 
@@ -190,7 +191,16 @@ export function installDevMock(): void {
     app: {
       info: async () => ({ version: '0.1.0-browser-preview', dataDir: '(browser preview — no disk)', dbPath: '(browser preview)', deviceId: 'preview-device' }),
       backup: async () => '(browser preview — backup unavailable)',
-      checkUpdate: async () => ({ status: 'up-to-date' as const, current: '0.1.0-browser-preview' }),
+      checkUpdate: async () => {
+        // browser preview: simulate an available update so the banner can be seen
+        setTimeout(() => mockUpdateCb?.({ version: '0.1.2', current: '0.1.0-browser-preview' }), 50);
+        return { status: 'update-available' as const, version: '0.1.2' };
+      },
+      installUpdate: async () => ({ ok: true }),
+      onUpdateAvailable: (cb: (info: { version: string; current: string }) => void) => {
+        mockUpdateCb = cb;
+        return () => { mockUpdateCb = null; };
+      },
     },
     settings: {
       get: async () => ({

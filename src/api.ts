@@ -16,7 +16,6 @@ export type CheckResult =
   | { status: 'no-folder' }
   | { status: 'up-to-date'; current: string }
   | { status: 'update-available'; version: string }
-  | { status: 'installing'; version: string }
   | { status: 'error'; message: string };
 
 export interface UserIdentity {
@@ -43,7 +42,13 @@ export interface LinkedItem {
 }
 
 interface Bridge {
-  app: { info(): Promise<AppInfo>; backup(): Promise<string>; checkUpdate(): Promise<CheckResult> };
+  app: {
+    info(): Promise<AppInfo>;
+    backup(): Promise<string>;
+    checkUpdate(): Promise<CheckResult>;
+    installUpdate(): Promise<{ ok: boolean; message?: string }>;
+    onUpdateAvailable(cb: (info: { version: string; current: string }) => void): () => void;
+  };
   settings: {
     get(): Promise<AppSettings>;
     set(p: Partial<AppSettings>): Promise<AppSettings>;

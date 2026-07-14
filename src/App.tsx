@@ -19,6 +19,7 @@ import ConflictsView from './views/ConflictsView';
 import SettingsView from './views/SettingsView';
 import CommandPalette from './components/CommandPalette';
 import CreateItemDialog from './components/CreateItemDialog';
+import UpdateBanner from './components/UpdateBanner';
 import './styles/app.css';
 
 export default function App() {
@@ -82,6 +83,7 @@ export default function App() {
       </div>
       {paletteOpen && <CommandPalette />}
       {createOpen && <CreateItemDialog onClose={() => setCreate(false)} />}
+      <UpdateBanner />
     </div>
   );
 }

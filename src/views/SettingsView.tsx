@@ -79,7 +79,8 @@ export default function SettingsView() {
     const res = await api.app.checkUpdate();
     if (res.status === 'up-to-date') flash(`You're on the latest version (${res.current}).`);
     else if (res.status === 'no-folder') flash('Configure a shared folder to receive updates.');
-    else setMsg(null);
+    else if (res.status === 'error') flash(`Update check failed: ${res.message}`);
+    else setMsg(null); // 'update-available' → the in-app banner appears
   };
 
   return (

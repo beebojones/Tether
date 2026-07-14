@@ -8,6 +8,12 @@ const api = {
     info: () => invoke('app:info'),
     backup: () => invoke('app:backup'),
     checkUpdate: () => invoke('app:checkUpdate'),
+    installUpdate: () => invoke('app:installUpdate'),
+    onUpdateAvailable: (cb: (info: { version: string; current: string }) => void) => {
+      const listener = (_e: unknown, info: { version: string; current: string }) => cb(info);
+      ipcRenderer.on('update:available', listener);
+      return () => ipcRenderer.removeListener('update:available', listener);
+    },
   },
   settings: {
     get: () => invoke('settings:get'),

@@ -12,7 +12,7 @@ import type { AttachmentManager } from './attachments';
 import type { Settings, UserIdentity } from './settings';
 import { backupDatabase, type DbContext } from './db/db';
 import { loadSeedData } from './db/seed';
-import { checkForUpdates } from './updater';
+import { checkForUpdates, installPendingUpdate } from './updater';
 import type { ItemFilter, ItemSort, ItemType, LinkKind, Priority, WorkItem } from '../shared/types';
 
 export interface IpcDeps {
@@ -40,8 +40,9 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle('app:backup', async () => backupDatabase(ctx));
 
   ipcMain.handle('app:checkUpdate', async () =>
-    checkForUpdates(deps.getWindow(), settings.get().syncFolder, app.getVersion(), { interactive: true }),
+    checkForUpdates(deps.getWindow(), settings.get().syncFolder, app.getVersion()),
   );
+  ipcMain.handle('app:installUpdate', async () => installPendingUpdate());
 
   // ---------- settings / identity ----------
   ipcMain.handle('settings:get', () => settings.get());

@@ -114,7 +114,7 @@ if (!gotLock) {
     if (app.isPackaged && syncFolder) {
       win?.webContents.once('did-finish-load', () => {
         setTimeout(() => {
-          void checkForUpdates(win, syncFolder, app.getVersion(), { interactive: false });
+          void checkForUpdates(win, syncFolder, app.getVersion());
         }, 2500);
       });
     }

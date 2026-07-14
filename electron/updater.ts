@@ -1,12 +1,14 @@
 // Folder-based updater. Tether makes NO network calls: it only reads the shared
 // release folder that OneDrive/SharePoint already syncs to disk. On finding a
 // newer version it verifies the installer's SHA256 against the SHA256.txt shipped
-// beside it (fail-closed), prompts, then launches the installer and quits.
+// beside it (fail-closed), then notifies the renderer, which shows the in-app
+// update banner. Installing is a separate step so the UI (not a native dialog)
+// drives the prompt.
 //
 // This is the "internal release share" path anticipated in docs/RELEASING.md — it
 // preserves the "zero network calls of its own" guarantee in docs/SECURITY.md.
 
-import { app, dialog, shell, type BrowserWindow } from 'electron';
+import { app, shell, type BrowserWindow } from 'electron';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
@@ -109,95 +111,49 @@ export type CheckResult =
   | { status: 'no-folder' }
   | { status: 'up-to-date'; current: string }
   | { status: 'update-available'; version: string }
-  | { status: 'installing'; version: string }
   | { status: 'error'; message: string };
 
+// The verified installer waiting to be applied. Kept in main so the renderer
+// never handles file paths — it only asks to install what main already verified.
+let pending: UpdateCandidate | null = null;
+
 /**
- * Check the shared release folder and, if a verified newer version exists, prompt
- * to install. interactive=true also reports "up to date" and errors to the user
- * (used by the manual "Check for updates" button); false stays silent unless an
- * update is found (used on startup). Never throws.
+ * Check the shared release folder. If a verified newer version exists, stash it and
+ * emit `update:available` to the renderer (which shows the in-app banner). Returns a
+ * plain result for callers such as the manual "Check for updates" button. Never throws.
  */
 export async function checkForUpdates(
   win: BrowserWindow | null,
   syncFolder: string | null,
   currentVersion: string,
-  opts: { interactive: boolean },
 ): Promise<CheckResult> {
   try {
-    if (!syncFolder) {
-      if (opts.interactive) {
-        void dialog.showMessageBox(win ?? undefined!, {
-          type: 'info',
-          message: 'No shared folder configured',
-          detail: 'Set a shared project folder in Settings to receive updates.',
-          buttons: ['OK'],
-        });
-      }
-      return { status: 'no-folder' };
-    }
+    if (!syncFolder) return { status: 'no-folder' };
 
     const candidate = findUpdate(syncFolder, currentVersion);
-    if (!candidate) {
-      if (opts.interactive) {
-        void dialog.showMessageBox(win ?? undefined!, {
-          type: 'info',
-          message: "You're up to date",
-          detail: `Tether ${currentVersion} is the latest version in the shared folder.`,
-          buttons: ['OK'],
-        });
-      }
-      return { status: 'up-to-date', current: currentVersion };
-    }
+    if (!candidate) return { status: 'up-to-date', current: currentVersion };
 
     const verified = await verifyInstaller(candidate);
-    if (!verified.ok) {
-      void dialog.showMessageBox(win ?? undefined!, {
-        type: 'warning',
-        message: `Update ${candidate.version} found, but it could not be verified`,
-        detail: `${verified.reason}\n\nFor safety, Tether will not install an unverified file. Ask John for a fresh copy.`,
-        buttons: ['OK'],
-      });
-      return { status: 'error', message: verified.reason ?? 'verification failed' };
-    }
+    if (!verified.ok) return { status: 'error', message: verified.reason ?? 'verification failed' };
 
-    const { response } = await dialog.showMessageBox(win ?? undefined!, {
-      type: 'question',
-      message: `Tether ${candidate.version} is available`,
-      detail: `You're on ${currentVersion}. Tether will close and the installer will open — your data and settings are preserved, and a backup is taken automatically before any changes.`,
-      buttons: ['Install now', 'Later'],
-      defaultId: 0,
-      cancelId: 1,
-    });
-    if (response !== 0) {
-      return { status: 'update-available', version: candidate.version };
-    }
-
-    const err = await shell.openPath(candidate.exePath);
-    if (err) {
-      void dialog.showMessageBox(win ?? undefined!, {
-        type: 'error',
-        message: 'Could not launch the installer',
-        detail: err,
-        buttons: ['OK'],
-      });
-      return { status: 'error', message: err };
-    }
-    // Quit so the installer can replace files without lock conflicts. openPath
-    // launches the installer detached, so it survives our exit.
-    setImmediate(() => app.quit());
-    return { status: 'installing', version: candidate.version };
+    pending = candidate;
+    win?.webContents.send('update:available', { version: candidate.version, current: currentVersion });
+    return { status: 'update-available', version: candidate.version };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('[updater]', message);
-    if (opts.interactive) {
-      void dialog.showMessageBox(win ?? undefined!, {
-        type: 'error',
-        message: 'Update check failed',
-        detail: message,
-        buttons: ['OK'],
-      });
-    }
     return { status: 'error', message };
   }
+}
+
+/** Apply the pending update: re-verify (fail-closed), launch the installer, quit. */
+export async function installPendingUpdate(): Promise<{ ok: boolean; message?: string }> {
+  if (!pending) return { ok: false, message: 'No update is ready to install.' };
+  const verified = await verifyInstaller(pending);
+  if (!verified.ok) return { ok: false, message: verified.reason ?? 'verification failed' };
+  const err = await shell.openPath(pending.exePath);
+  if (err) return { ok: false, message: err };
+  // Quit so the installer can replace files; openPath launched it detached.
+  setImmediate(() => app.quit());
+  return { ok: true };
 }
