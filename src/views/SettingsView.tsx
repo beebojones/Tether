@@ -1,7 +1,7 @@
-// Settings: identity, sync folder, sample data, backup, data locations, about.
+// Settings: identity, sync folder, sample data, local agent access, backups, data locations, about.
 import { useEffect, useRef, useState } from 'react';
-import { FolderOpen, Database, Download, Trash2, RefreshCw } from 'lucide-react';
-import { api, type AppInfo } from '../api';
+import { FolderOpen, Database, Download, Trash2, RefreshCw, RotateCcw } from 'lucide-react';
+import { api, type AppInfo, type BackupInfo } from '../api';
 import { useApp } from '../store';
 import { fmtDateTime, Avatar } from '../components/ui';
 
@@ -9,11 +9,31 @@ export default function SettingsView() {
   const { settings, setSettings, syncStatus, users, refreshMeta } = useApp();
   const [info, setInfo] = useState<AppInfo | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [backups, setBackups] = useState<BackupInfo[]>([]);
   const avatarInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void api.app.info().then(setInfo);
+    void api.app.backupsList().then(setBackups);
   }, []);
+
+  const refreshBackups = () => void api.app.backupsList().then(setBackups);
+
+  const backupNow = async () => {
+    const p = await api.app.backup();
+    refreshBackups();
+    flash(`Backup saved: ${p}`);
+  };
+
+  const restoreBackup = async (name: string) => {
+    const ok = window.confirm(
+      `Restore from ${name}?\n\nYour current database will be quarantined and replaced with this backup ` +
+        `the next time Tether starts. Nothing changes until you restart.`,
+    );
+    if (!ok) return;
+    await api.app.backupsRestore(name);
+    flash('Restore staged. Restart Tether to apply it — your current database is quarantined and replaced on next launch.');
+  };
 
   const flash = (m: string) => {
     setMsg(m);
@@ -191,6 +211,131 @@ export default function SettingsView() {
         </dl>
       </Section>
 
+      <Section title="Local agent access">
+        <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 10 }}>
+          Off by default. When enabled, Tether serves this workspace over a small API bound to
+          <span className="mono"> 127.0.0.1</span> (loopback only — never exposed to the network) so local AI agents can read it.
+        </p>
+        <ToggleRow
+          id="set-localapi"
+          checked={settings?.localApiEnabled ?? false}
+          onChange={(v) => void api.settings.set({ localApiEnabled: v }).then(setSettings)}
+          label="Allow local AI agents to read this workspace"
+        />
+        <ToggleRow
+          id="set-localapi-writes"
+          sub
+          checked={settings?.localApiAllowWrites ?? false}
+          disabled={!settings?.localApiEnabled}
+          onChange={(v) => void api.settings.set({ localApiAllowWrites: v }).then(setSettings)}
+          label="…and let them make changes"
+        />
+        <div className="form-row" style={{ maxWidth: 160, marginTop: 10 }}>
+          <label htmlFor="set-localapi-port">Port</label>
+          <input
+            id="set-localapi-port"
+            type="number"
+            min={1024}
+            max={65535}
+            defaultValue={settings?.localApiPort ?? 8787}
+            onBlur={(e) => {
+              const v = parseInt(e.target.value, 10);
+              if (Number.isFinite(v) && v >= 1024 && v <= 65535 && v !== settings?.localApiPort)
+                void api.settings.set({ localApiPort: v }).then(setSettings);
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+          />
+        </div>
+        <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 10 }}>
+          Changing any of these takes effect after you restart Tether. The access token lives in
+          <span className="mono"> local-api-token.txt</span> inside the data folder shown below — share it only with agents you trust.
+        </p>
+      </Section>
+
+      <Section title="Backups">
+        <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 10 }}>
+          Snapshots are integrity-checked before they're written, kept newest-first, and pruned to the retention limit.
+        </p>
+        <ToggleRow
+          id="set-autobackup"
+          checked={settings?.autoBackup ?? true}
+          onChange={(v) => void api.settings.set({ autoBackup: v }).then(setSettings)}
+          label="Automatically back up on a timer"
+        />
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 6 }}>
+          <div className="form-row" style={{ maxWidth: 150 }}>
+            <label htmlFor="set-backup-interval">Interval (minutes)</label>
+            <input
+              id="set-backup-interval"
+              type="number"
+              min={1}
+              disabled={!(settings?.autoBackup ?? true)}
+              defaultValue={settings?.backupIntervalMin ?? 15}
+              onBlur={(e) => {
+                const v = parseInt(e.target.value, 10);
+                if (Number.isFinite(v) && v >= 1 && v !== settings?.backupIntervalMin)
+                  void api.settings.set({ backupIntervalMin: v }).then(setSettings);
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            />
+          </div>
+          <div className="form-row" style={{ maxWidth: 150 }}>
+            <label htmlFor="set-backup-retention">Keep (snapshots)</label>
+            <input
+              id="set-backup-retention"
+              type="number"
+              min={1}
+              defaultValue={settings?.backupRetention ?? 20}
+              onBlur={(e) => {
+                const v = parseInt(e.target.value, 10);
+                if (Number.isFinite(v) && v >= 1 && v !== settings?.backupRetention)
+                  void api.settings.set({ backupRetention: v }).then(setSettings);
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 6, marginBottom: 4 }}>
+          <button onClick={() => void backupNow()}>
+            <Download size={14} /> Back up now
+          </button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+          {backups.length === 0 && (
+            <p className="muted" style={{ fontSize: 'var(--fs-sm)' }}>No backups yet — use “Back up now” to make one.</p>
+          )}
+          {backups.map((b) => (
+            <div
+              key={b.name}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '7px 10px',
+                background: 'var(--bg-raised)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--r-sm)',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  className="mono"
+                  style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {b.name}
+                </div>
+                <div className="muted" style={{ fontSize: 'var(--fs-xs)' }}>
+                  {fmtBytes(b.size)} · {fmtDateTime(b.mtime)}
+                </div>
+              </div>
+              <button onClick={() => void restoreBackup(b.name)}>
+                <RotateCcw size={13} /> Restore
+              </button>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       <Section title="Sample data">
         <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 10 }}>
           Sample Support AI records are marked with a SAMPLE badge. Remove them when you start entering real work.
@@ -205,11 +350,8 @@ export default function SettingsView() {
         </div>
       </Section>
 
-      <Section title="Backup & data">
+      <Section title="Data & updates">
         <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-          <button onClick={() => void api.app.backup().then((p) => flash(`Backup saved: ${p}`))}>
-            <Download size={14} /> Back up database now
-          </button>
           <button onClick={() => void checkForUpdates()}>
             <RefreshCw size={13} /> Check for updates
           </button>
@@ -222,7 +364,7 @@ export default function SettingsView() {
         </dl>
         <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 10 }}>
           All project data lives on this computer (and in the shared folder when sync is enabled). Nothing is sent to any external service.
-          Automatic backups are taken before every schema migration; manual backups land in the backups folder shown above.
+          Backups land in the <span className="mono">backups</span> folder inside the data folder above; the Backups section manages them.
         </p>
       </Section>
     </div>
@@ -236,4 +378,47 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       {children}
     </section>
   );
+}
+
+// Checkbox-backed toggle row matching the app's existing label+checkbox pattern.
+// `sub` indents and lightens the row so it reads as subordinate to the row above.
+function ToggleRow({ id, checked, disabled, onChange, label, sub }: {
+  id: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  sub?: boolean;
+}) {
+  return (
+    <label
+      htmlFor={id}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        fontSize: 'var(--fs-sm)',
+        color: 'var(--text-secondary)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
+        marginLeft: sub ? 26 : 0,
+        marginBottom: 8,
+      }}
+    >
+      <input id={id} type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+      {label}
+    </label>
+  );
+}
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let v = n / 1024;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(v < 10 ? 1 : 0)} ${units[i]}`;
 }

@@ -137,6 +137,16 @@ let mockDensity: 'compact' | 'comfortable' = 'compact';
 let mockCheckboxShape: 'square' | 'circle' | 'hexagon' = 'circle';
 let mockProjectName = 'Project Atlas';
 let mockViewPrefs: import('@shared/types').ViewPrefs = {};
+let mockLocalApiEnabled = false;
+let mockLocalApiPort = 8787;
+let mockLocalApiAllowWrites = false;
+let mockAutoBackup = true;
+let mockBackupIntervalMin = 15;
+let mockBackupRetention = 20;
+const mockBackups: { name: string; size: number; mtime: string }[] = [
+  { name: `tether-${daysAgo(0.02).replace(/[:.]/g, '-')}.db`, size: 393216, mtime: daysAgo(0.02) },
+  { name: `tether-${daysAgo(1).replace(/[:.]/g, '-')}.db`, size: 385024, mtime: daysAgo(1) },
+];
 let mockUpdateCb: ((info: { version: string; current: string }) => void) | null = null;
 const listeners = new Set<(w: { entity: string; entityId: string }) => void>();
 const emit = () => listeners.forEach((l) => l({ entity: '*', entityId: '*' }));
@@ -190,7 +200,13 @@ export function installDevMock(): void {
   const bridge = {
     app: {
       info: async () => ({ version: '0.1.0-browser-preview', dataDir: '(browser preview — no disk)', dbPath: '(browser preview)', deviceId: 'preview-device' }),
-      backup: async () => '(browser preview — backup unavailable)',
+      backup: async () => {
+        const name = `tether-${new Date().toISOString().replace(/[:.]/g, '-')}.db`;
+        mockBackups.unshift({ name, size: 262144 + Math.floor(Math.random() * 131072), mtime: now() });
+        return `(browser preview) backups/${name}`;
+      },
+      backupsList: async () => mockBackups,
+      backupsRestore: async () => ({ restartRequired: true as const }),
       checkUpdate: async () => {
         // browser preview: simulate an available update so the banner can be seen
         setTimeout(() => mockUpdateCb?.({ version: '0.1.2', current: '0.1.0-browser-preview' }), 50);
@@ -211,12 +227,35 @@ export function installDevMock(): void {
         projectName: mockProjectName,
         seedLoaded: true,
         viewPrefs: mockViewPrefs,
+        localApiEnabled: mockLocalApiEnabled,
+        localApiPort: mockLocalApiPort,
+        localApiAllowWrites: mockLocalApiAllowWrites,
+        autoBackup: mockAutoBackup,
+        backupIntervalMin: mockBackupIntervalMin,
+        backupRetention: mockBackupRetention,
       }),
-      set: async (patch: { density?: 'compact' | 'comfortable'; checkboxShape?: 'square' | 'circle' | 'hexagon'; projectName?: string; viewPrefs?: import('@shared/types').ViewPrefs }) => {
+      set: async (patch: {
+        density?: 'compact' | 'comfortable';
+        checkboxShape?: 'square' | 'circle' | 'hexagon';
+        projectName?: string;
+        viewPrefs?: import('@shared/types').ViewPrefs;
+        localApiEnabled?: boolean;
+        localApiPort?: number;
+        localApiAllowWrites?: boolean;
+        autoBackup?: boolean;
+        backupIntervalMin?: number;
+        backupRetention?: number;
+      }) => {
         if (patch.density) mockDensity = patch.density;
         if (patch.checkboxShape) mockCheckboxShape = patch.checkboxShape;
         if (patch.projectName !== undefined) mockProjectName = patch.projectName;
         if (patch.viewPrefs !== undefined) mockViewPrefs = patch.viewPrefs;
+        if (patch.localApiEnabled !== undefined) mockLocalApiEnabled = patch.localApiEnabled;
+        if (patch.localApiPort !== undefined) mockLocalApiPort = patch.localApiPort;
+        if (patch.localApiAllowWrites !== undefined) mockLocalApiAllowWrites = patch.localApiAllowWrites;
+        if (patch.autoBackup !== undefined) mockAutoBackup = patch.autoBackup;
+        if (patch.backupIntervalMin !== undefined) mockBackupIntervalMin = patch.backupIntervalMin;
+        if (patch.backupRetention !== undefined) mockBackupRetention = patch.backupRetention;
         return bridge.settings.get();
       },
       setUser: async () => bridge.settings.get(),

@@ -33,6 +33,18 @@ export interface AppSettings {
   projectName: string;
   seedLoaded: boolean;
   viewPrefs: ViewPrefs;
+  localApiEnabled: boolean;
+  localApiPort: number;
+  localApiAllowWrites: boolean;
+  autoBackup: boolean;
+  backupIntervalMin: number;
+  backupRetention: number;
+}
+
+export interface BackupInfo {
+  name: string;
+  size: number;
+  mtime: string;
 }
 
 export interface LinkedItem {
@@ -45,6 +57,8 @@ interface Bridge {
   app: {
     info(): Promise<AppInfo>;
     backup(): Promise<string>;
+    backupsList(): Promise<BackupInfo[]>;
+    backupsRestore(name: string): Promise<{ restartRequired: true }>;
     checkUpdate(): Promise<CheckResult>;
     installUpdate(): Promise<{ ok: boolean; message?: string }>;
     onUpdateAvailable(cb: (info: { version: string; current: string }) => void): () => void;
