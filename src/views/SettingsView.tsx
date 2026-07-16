@@ -4,6 +4,10 @@ import { FolderOpen, Database, Download, Trash2, RefreshCw, RotateCcw } from 'lu
 import { api, type AppInfo, type BackupInfo } from '../api';
 import { useApp } from '../store';
 import { fmtDateTime, Avatar } from '../components/ui';
+import TetherMark from '../components/TetherMark';
+
+// Read once at load: a long-running window shouldn't show a stale year at New Year.
+const COPYRIGHT_YEAR = new Date().getFullYear();
 
 export default function SettingsView() {
   const { settings, setSettings, syncStatus, users, refreshMeta } = useApp();
@@ -350,22 +354,33 @@ export default function SettingsView() {
         </div>
       </Section>
 
-      <Section title="Data & updates">
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-          <button onClick={() => void checkForUpdates()}>
-            <RefreshCw size={13} /> Check for updates
-          </button>
-        </div>
+      <Section title="Data">
         <dl className="kv">
           <dt>Database</dt><dd className="mono">{info?.dbPath}</dd>
           <dt>Data folder</dt><dd className="mono">{info?.dataDir}</dd>
           <dt>Device ID</dt><dd className="mono">{info?.deviceId}</dd>
-          <dt>Version</dt><dd>{info?.version}</dd>
         </dl>
         <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 10 }}>
           All project data lives on this computer (and in the shared folder when sync is enabled). Nothing is sent to any external service.
           Backups land in the <span className="mono">backups</span> folder inside the data folder above; the Backups section manages them.
         </p>
+      </Section>
+
+      <Section title="About">
+        <div className="about-row">
+          <div className="about-logo"><TetherMark size={20} /></div>
+          <div>
+            <div className="about-name">
+              Tether <span className="ident">v{info?.version ?? '…'}</span>
+            </div>
+            <div className="muted about-legal">© {COPYRIGHT_YEAR} John Crouch. All rights reserved.</div>
+          </div>
+          <div className="about-actions">
+            <button onClick={() => void checkForUpdates()}>
+              <RefreshCw size={13} /> Check for updates
+            </button>
+          </div>
+        </div>
       </Section>
     </div>
   );
