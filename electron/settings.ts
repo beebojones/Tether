@@ -18,6 +18,8 @@ export interface AppSettings {
   projectName: string; // display name used by reports/exports/presentation — editable content
   seedLoaded: boolean;
   viewPrefs: ViewPrefs; // per-user Board/Dashboard layout; local-only, never synced
+  localApiEnabled: boolean; // loopback read API for local agents (off by default). Token lives in local-api-token.txt, not here.
+  localApiPort: number;
 }
 
 const DEFAULTS: AppSettings = {
@@ -28,6 +30,8 @@ const DEFAULTS: AppSettings = {
   projectName: 'Support AI',
   seedLoaded: false,
   viewPrefs: {},
+  localApiEnabled: false,
+  localApiPort: 8787,
 };
 
 export class Settings {

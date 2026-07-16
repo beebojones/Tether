@@ -8,6 +8,7 @@ import { AttachmentManager } from './attachments';
 import { Settings } from './settings';
 import { registerIpc } from './ipc';
 import { checkForUpdates } from './updater';
+import { startLocalApi } from './localapi';
 
 let win: BrowserWindow | null = null;
 
@@ -106,6 +107,12 @@ if (!gotLock) {
     if (syncFolder) sync.setTransport(new FolderTransport(syncFolder));
 
     registerIpc({ ctx, store, sync, attachments, settings, getWindow: () => win });
+
+    // Optional loopback read API for local agents (Claude via tether-mcp).
+    // OFF unless settings.localApiEnabled or TETHER_LOCAL_API=1. Reuses Store,
+    // so it can never bypass the op-log / sync path.
+    const localApi = startLocalApi({ store, ctx, settings, userDataDir: userData });
+    app.on('before-quit', () => localApi?.close());
 
     createWindow();
 
