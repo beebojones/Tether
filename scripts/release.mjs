@@ -60,13 +60,29 @@ function sha256(file) {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
-function releaseNotes(version, prevTag) {
+// Which commits does this version contain? Once v<version> exists (a --stage-only re-run,
+// or a release resumed after a failed build), `v<version>..HEAD` is EMPTY and the notes
+// silently fall back to "Maintenance and improvements" — so anchor to the tag BEFORE it
+// and end at the tag itself.
+function notesRange(version) {
+  const cur = `v${version}`;
+  const tagged = (() => { try { return capture(`git tag -l ${cur}`) === cur; } catch { return false; } })();
+  let base = '';
+  // `~1` not `^`: these run through cmd.exe on Windows, where ^ is the escape character
+  // and gets eaten before git sees it — `v0.2.0^` silently resolves to v0.2.0 itself,
+  // collapsing the range to nothing.
+  try { base = capture(`git describe --tags --abbrev=0 ${tagged ? `${cur}~1` : 'HEAD'}`); } catch { /* no tags yet */ }
+  const end = tagged ? cur : 'HEAD';
+  return base ? `${base}..${end}` : end;
+}
+
+function releaseNotes(version) {
   let changes = '';
   try {
-    const range = prevTag ? `${prevTag}..HEAD` : 'HEAD';
-    changes = capture(`git log ${range} --no-merges --pretty=format:%s`)
+    changes = capture(`git log ${notesRange(version)} --no-merges --pretty=format:%s`)
       .split('\n')
-      .filter((s) => s && !/^\d+\.\d+\.\d+$/.test(s)) // drop the version-bump commits
+      // drop the version-bump commits: bare "0.2.0" and npm version's "Release 0.2.0"
+      .filter((s) => s && !/^(Release )?\d+\.\d+\.\d+$/.test(s))
       .map((s) => `- ${s}`)
       .join('\n');
   } catch { /* first release or no tags */ }
@@ -90,7 +106,6 @@ function installGuide(version) {
 
 // ---- preconditions ----
 const branch = capture('git rev-parse --abbrev-ref HEAD');
-const prevTag = (() => { try { return capture('git describe --tags --abbrev=0'); } catch { return ''; } })();
 
 if (!stageOnly) {
   // Commit any pending work so the version bump is clean and captured.
@@ -127,7 +142,7 @@ fs.mkdirSync(destDir, { recursive: true });
 fs.copyFileSync(installer, path.join(destDir, `Tether Setup ${version}.exe`));
 const hash = sha256(installer);
 fs.writeFileSync(path.join(destDir, 'SHA256.txt'), `${hash} *Tether Setup ${version}.exe`);
-fs.writeFileSync(path.join(destDir, 'RELEASE_NOTES.md'), releaseNotes(version, prevTag));
+fs.writeFileSync(path.join(destDir, 'RELEASE_NOTES.md'), releaseNotes(version));
 fs.writeFileSync(path.join(destDir, 'INSTALL.md'), installGuide(version));
 console.log(`Staged: ${destDir}`);
 console.log(`SHA256: ${hash}`);
