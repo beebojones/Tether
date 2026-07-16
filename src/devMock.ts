@@ -148,6 +148,10 @@ const mockBackups: { name: string; size: number; mtime: string }[] = [
   { name: `tether-${daysAgo(1).replace(/[:.]/g, '-')}.db`, size: 385024, mtime: daysAgo(1) },
 ];
 let mockUpdateCb: ((info: { version: string; current: string }) => void) | null = null;
+let mockToken = {
+  token: 'preview0000token0000not0000real0000abcd0000ef12',
+  path: '(browser preview) local-api-token.txt',
+};
 const listeners = new Set<(w: { entity: string; entityId: string }) => void>();
 const emit = () => listeners.forEach((l) => l({ entity: '*', entityId: '*' }));
 
@@ -207,10 +211,11 @@ export function installDevMock(): void {
       },
       backupsList: async () => mockBackups,
       backupsRestore: async () => ({ restartRequired: true as const }),
-      localApiToken: async () => ({
-        token: 'preview0000token0000not0000real0000abcd0000ef12',
-        path: '(browser preview) local-api-token.txt',
-      }),
+      localApiToken: async () => mockToken,
+      localApiRotateToken: async () => {
+        mockToken = { ...mockToken, token: 'preview' + Math.random().toString(16).slice(2).padEnd(40, '0') };
+        return mockToken;
+      },
       checkUpdate: async () => {
         // browser preview: simulate an available update so the banner can be seen
         setTimeout(() => mockUpdateCb?.({ version: '0.1.2', current: '0.1.0-browser-preview' }), 50);

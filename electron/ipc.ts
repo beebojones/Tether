@@ -13,6 +13,7 @@ import type { Settings, UserIdentity } from './settings';
 import { backupDatabase, listBackups, stageRestore, type DbContext } from './db/db';
 import { loadSeedData } from './db/seed';
 import { checkForUpdates, installPendingUpdate } from './updater';
+import { writeNewToken, type LocalApiHandle } from './localapi';
 import type { ItemFilter, ItemSort, ItemType, LinkKind, Priority, WorkItem } from '../shared/types';
 
 export interface IpcDeps {
@@ -22,6 +23,8 @@ export interface IpcDeps {
   attachments: AttachmentManager;
   settings: Settings;
   getWindow: () => BrowserWindow | null;
+  /** Getter, not the handle: IPC registers before the API starts. Null when it's off. */
+  getLocalApi: () => LocalApiHandle | null;
 }
 
 export function registerIpc(deps: IpcDeps): void {
@@ -55,6 +58,13 @@ export function registerIpc(deps: IpcDeps): void {
     } catch {
       return null; // not generated yet — API has never booted enabled
     }
+  });
+
+  // Rotate the token. If the server is up it swaps live (the old one is refused from the
+  // next request); if it's off we still write the file, so the next boot uses the new one.
+  ipcMain.handle('app:localApiRotateToken', () => {
+    const api = deps.getLocalApi();
+    return api ? api.rotateToken() : writeNewToken(app.getPath('userData'));
   });
 
   ipcMain.handle('app:checkUpdate', async () =>

@@ -62,6 +62,7 @@ interface Bridge {
     checkUpdate(): Promise<CheckResult>;
     installUpdate(): Promise<{ ok: boolean; message?: string }>;
     localApiToken(): Promise<{ token: string; path: string } | null>;
+    localApiRotateToken(): Promise<{ token: string; path: string }>;
     onUpdateAvailable(cb: (info: { version: string; current: string }) => void): () => void;
   };
   settings: {

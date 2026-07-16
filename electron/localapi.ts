@@ -28,6 +28,16 @@ export interface LocalApiHandle {
   close: () => void;
   port: number;
   tokenPath: string;
+  /** Mint a new token and honour it at once — a revoke that waits for a restart is not one. */
+  rotateToken: () => { token: string; path: string };
+}
+
+/** Mint + persist a fresh token, replacing any existing one. */
+export function writeNewToken(userDataDir: string): { token: string; path: string } {
+  const file = path.join(userDataDir, 'local-api-token.txt');
+  const token = crypto.randomBytes(24).toString('hex');
+  fs.writeFileSync(file, token, { encoding: 'utf8', mode: 0o600 });
+  return { token, path: file };
 }
 
 const ZERO_ONE_FIELDS = ['leadershipVisible', 'archived', 'sample'] as const;
@@ -70,13 +80,12 @@ function loadOrCreateToken(userDataDir: string): { token: string; file: string }
   const file = path.join(userDataDir, 'local-api-token.txt');
   try {
     const existing = fs.readFileSync(file, 'utf8').trim();
-    if (existing) return { token: existing, file };
+    if (existing) return { token: existing, file }; // persists across restarts by design
   } catch {
     /* fall through and create */
   }
-  const token = crypto.randomBytes(24).toString('hex');
-  fs.writeFileSync(file, token, { encoding: 'utf8', mode: 0o600 });
-  return { token, file };
+  const created = writeNewToken(userDataDir);
+  return { token: created.token, file: created.path };
 }
 
 export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
@@ -88,7 +97,11 @@ export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
   }
 
   const port = s.localApiPort || 8787;
-  const { token, file: tokenPath } = loadOrCreateToken(deps.userDataDir);
+  const loaded = loadOrCreateToken(deps.userDataDir);
+  const tokenPath = loaded.file;
+  // `let`: rotateToken swaps this and every later request compares against the new value,
+  // so a leaked token dies on click rather than at next launch.
+  let token = loaded.token;
   const { store, ctx, settings, sync } = deps;
   const writesEnabled = s.localApiAllowWrites || process.env.TETHER_LOCAL_API_WRITES === '1';
 
@@ -226,5 +239,15 @@ export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
     );
   });
 
-  return { close: () => server.close(), port, tokenPath };
+  return {
+    close: () => server.close(),
+    port,
+    tokenPath,
+    rotateToken: () => {
+      const next = writeNewToken(deps.userDataDir);
+      token = next.token; // live: the old token is refused from the very next request
+      console.log('[tether] local API token rotated — re-register any agent using the old one');
+      return next;
+    },
+  };
 }

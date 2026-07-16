@@ -30,6 +30,19 @@ export default function SettingsView() {
     if (settings?.localApiEnabled && !token) void api.app.localApiToken().then(setToken);
   }, [settings?.localApiEnabled, token]);
 
+  // Destructive and one misclick from Copy, so name what breaks before doing it.
+  const rotateToken = async () => {
+    const ok = window.confirm(
+      'Regenerate the access token?\n\nThe current token stops working immediately. Any agent ' +
+        'using it — a registered MCP server, a script, a saved copy — must be updated with the ' +
+        'new one before it can reach Tether again.',
+    );
+    if (!ok) return;
+    setToken(await api.app.localApiRotateToken());
+    setTokenShown(true); // you need to see it to go update whatever just broke
+    flash('New token generated. The old one no longer works — update any agent using it.');
+  };
+
   // Clipboard writes can be refused (unfocused document, locked-down policy). Never
   // fail silently: reveal + select the field so Ctrl+C still works.
   const copyToken = async () => {
@@ -292,6 +305,9 @@ export default function SettingsView() {
               </button>
               <button className="ghost" onClick={() => void copyToken()}>
                 <Copy size={12} /> Copy
+              </button>
+              <button className="ghost" onClick={() => void rotateToken()} title="Replace this token">
+                <RefreshCw size={12} /> Regenerate
               </button>
             </>
           ) : (
