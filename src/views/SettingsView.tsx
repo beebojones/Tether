@@ -240,14 +240,14 @@ export default function SettingsView() {
 
       <Section title="Local agent access">
         <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 10 }}>
-          Off by default. When enabled, Tether serves this workspace over a small API bound to
-          <span className="mono"> 127.0.0.1</span> (loopback only — never exposed to the network) so local AI agents can read it.
+          Off by default. Serves this workspace to local AI agents on
+          <span className="mono"> 127.0.0.1</span> — loopback only, never exposed to the network.
         </p>
         <ToggleRow
           id="set-localapi"
           checked={settings?.localApiEnabled ?? false}
           onChange={(v) => void api.settings.set({ localApiEnabled: v }).then(setSettings)}
-          label="Allow local AI agents to read this workspace"
+          label="Read this workspace"
         />
         <ToggleRow
           id="set-localapi-writes"
@@ -255,7 +255,7 @@ export default function SettingsView() {
           checked={settings?.localApiAllowWrites ?? false}
           disabled={!settings?.localApiEnabled}
           onChange={(v) => void api.settings.set({ localApiAllowWrites: v }).then(setSettings)}
-          label="…and let them make changes"
+          label="…and make changes"
         />
         <div className="form-row" style={{ maxWidth: 160, marginTop: 10 }}>
           <label htmlFor="set-localapi-port">Port</label>
@@ -286,23 +286,23 @@ export default function SettingsView() {
                 value={token.token}
                 onFocus={(e) => e.currentTarget.select()}
               />
-              <button onClick={() => setTokenShown((v) => !v)} title={tokenShown ? 'Hide' : 'Reveal'}>
-                {tokenShown ? <EyeOff size={13} /> : <Eye size={13} />}
+              <button className="ghost" onClick={() => setTokenShown((v) => !v)}>
+                {tokenShown ? <EyeOff size={12} /> : <Eye size={12} />}
                 {tokenShown ? 'Hide' : 'Reveal'}
               </button>
-              <button onClick={() => void copyToken()}>
-                <Copy size={13} /> Copy
+              <button className="ghost" onClick={() => void copyToken()}>
+                <Copy size={12} /> Copy
               </button>
             </>
           ) : (
             <span className="muted" style={{ fontSize: 'var(--fs-sm)' }}>
-              Generated the first time Tether starts with access enabled. Turn it on above, then restart.
+              Created on the first restart after you switch access on.
             </span>
           )}
         </div>
         <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 10 }}>
-          Changing any of these takes effect after you restart Tether. This token is unique to this computer and
-          never syncs to teammates — share it only with agents you trust.
+          Changes take effect after a restart. The token is unique to this computer and never syncs — share it
+          only with agents you trust.
         </p>
       </Section>
 
@@ -470,7 +470,7 @@ function ToggleRow({ id, checked, disabled, onChange, label, sub }: {
         marginBottom: 8,
       }}
     >
-      <input id={id} type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+      <input id={id} type="checkbox" className="switch" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
       {label}
     </label>
   );

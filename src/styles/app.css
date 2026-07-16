@@ -288,14 +288,58 @@
 }
 .toast.error { border-color: var(--danger); }
 
+/* ---------- Settings toggles ----------
+   A switch, not a checkbox: these are on/off states for a feature, not items in a
+   list. Scoped to .switch so the app's item checkboxes (which carry their own shape
+   setting) are untouched. Every rule outspecifies base.css's input[type='checkbox']
+   block — app.css is injected BEFORE base.css (main.tsx imports App first), so ties
+   would lose. */
+input[type='checkbox'].switch {
+  width: 30px;
+  height: 17px;
+  border-radius: var(--r-full);
+  border-color: var(--border-strong);
+  background: var(--bg-input);
+}
+input[type='checkbox'].switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border: none;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transform: none;
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+input[type='checkbox'].switch:checked { background: var(--accent); border-color: var(--accent); }
+/* Must restate the knob's geometry, not just its offset: base.css's
+   input[type='checkbox']:checked::after (the tick: 4x8, rotated, offset) has the same
+   specificity as .switch::after and is injected later, so it would win those properties
+   and reshape the knob into a tick. Adding :checked here outranks it outright. */
+input[type='checkbox'].switch:checked::after {
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border: none;
+  border-radius: 50%;
+  transform: translateX(13px);
+  background: #fff;
+}
+
 /* ---------- Settings > Local agent access: token row ---------- */
-.token-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.token-row { display: flex; align-items: center; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
 .token-row label { font-size: var(--fs-sm); color: var(--text-secondary); }
+.token-row button { padding: 5px 9px; font-size: var(--fs-xs); }
 .token-field {
   flex: 1;
-  min-width: 200px;
+  min-width: 180px;
   font-size: var(--fs-xs);
   letter-spacing: 0.4px;
+  color: var(--text-secondary);
 }
 
 /* ---------- Settings > About ---------- */
