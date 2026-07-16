@@ -44,6 +44,19 @@ export function registerIpc(deps: IpcDeps): void {
   ipcMain.handle('app:backups:list', () => listBackups(ctx));
   ipcMain.handle('app:backups:restore', (_e, name: string) => stageRestore(ctx, name));
 
+  // Surface the local-API token so Settings can show it instead of sending people
+  // to a file. Read-only: never creates the token — that stays the API's job at
+  // boot, so reading Settings can't mint a secret for a disabled feature.
+  ipcMain.handle('app:localApiToken', () => {
+    const file = path.join(app.getPath('userData'), 'local-api-token.txt');
+    try {
+      const token = fs.readFileSync(file, 'utf8').trim();
+      return token ? { token, path: file } : null;
+    } catch {
+      return null; // not generated yet — API has never booted enabled
+    }
+  });
+
   ipcMain.handle('app:checkUpdate', async () =>
     checkForUpdates(deps.getWindow(), settings.get().syncFolder, app.getVersion()),
   );

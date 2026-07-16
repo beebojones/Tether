@@ -9,6 +9,7 @@ const api = {
     backup: () => invoke('app:backup'),
     backupsList: () => invoke('app:backups:list'),
     backupsRestore: (name: string) => invoke('app:backups:restore', name),
+    localApiToken: () => invoke('app:localApiToken'),
     checkUpdate: () => invoke('app:checkUpdate'),
     installUpdate: () => invoke('app:installUpdate'),
     onUpdateAvailable: (cb: (info: { version: string; current: string }) => void) => {

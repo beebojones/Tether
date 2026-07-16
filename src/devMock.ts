@@ -207,6 +207,10 @@ export function installDevMock(): void {
       },
       backupsList: async () => mockBackups,
       backupsRestore: async () => ({ restartRequired: true as const }),
+      localApiToken: async () => ({
+        token: 'preview0000token0000not0000real0000abcd0000ef12',
+        path: '(browser preview) local-api-token.txt',
+      }),
       checkUpdate: async () => {
         // browser preview: simulate an available update so the banner can be seen
         setTimeout(() => mockUpdateCb?.({ version: '0.1.2', current: '0.1.0-browser-preview' }), 50);

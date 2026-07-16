@@ -61,6 +61,7 @@ interface Bridge {
     backupsRestore(name: string): Promise<{ restartRequired: true }>;
     checkUpdate(): Promise<CheckResult>;
     installUpdate(): Promise<{ ok: boolean; message?: string }>;
+    localApiToken(): Promise<{ token: string; path: string } | null>;
     onUpdateAvailable(cb: (info: { version: string; current: string }) => void): () => void;
   };
   settings: {

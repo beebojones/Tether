@@ -1,6 +1,6 @@
 // Settings: identity, sync folder, sample data, local agent access, backups, data locations, about.
 import { useEffect, useRef, useState } from 'react';
-import { FolderOpen, Database, Download, Trash2, RefreshCw, RotateCcw } from 'lucide-react';
+import { FolderOpen, Database, Download, Trash2, RefreshCw, RotateCcw, Eye, EyeOff, Copy } from 'lucide-react';
 import { api, type AppInfo, type BackupInfo } from '../api';
 import { useApp } from '../store';
 import { fmtDateTime, Avatar } from '../components/ui';
@@ -14,12 +14,35 @@ export default function SettingsView() {
   const [info, setInfo] = useState<AppInfo | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [backups, setBackups] = useState<BackupInfo[]>([]);
+  const [token, setToken] = useState<{ token: string; path: string } | null>(null);
+  const [tokenShown, setTokenShown] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null);
+  const tokenField = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void api.app.info().then(setInfo);
     void api.app.backupsList().then(setBackups);
+    void api.app.localApiToken().then(setToken);
   }, []);
+
+  // Re-read after the toggle flips: the token file is minted on the next enabled boot.
+  useEffect(() => {
+    if (settings?.localApiEnabled && !token) void api.app.localApiToken().then(setToken);
+  }, [settings?.localApiEnabled, token]);
+
+  // Clipboard writes can be refused (unfocused document, locked-down policy). Never
+  // fail silently: reveal + select the field so Ctrl+C still works.
+  const copyToken = async () => {
+    if (!token) return;
+    try {
+      await navigator.clipboard.writeText(token.token);
+      flash('Access token copied to the clipboard.');
+    } catch {
+      setTokenShown(true);
+      tokenField.current?.select();
+      flash("Couldn't reach the clipboard — the token is selected, press Ctrl+C to copy it.");
+    }
+  };
 
   const refreshBackups = () => void api.app.backupsList().then(setBackups);
 
@@ -250,9 +273,36 @@ export default function SettingsView() {
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
           />
         </div>
+        <div className="token-row">
+          <label htmlFor="set-localapi-token">Access token</label>
+          {token ? (
+            <>
+              <input
+                id="set-localapi-token"
+                ref={tokenField}
+                className="mono token-field"
+                readOnly
+                type={tokenShown ? 'text' : 'password'}
+                value={token.token}
+                onFocus={(e) => e.currentTarget.select()}
+              />
+              <button onClick={() => setTokenShown((v) => !v)} title={tokenShown ? 'Hide' : 'Reveal'}>
+                {tokenShown ? <EyeOff size={13} /> : <Eye size={13} />}
+                {tokenShown ? 'Hide' : 'Reveal'}
+              </button>
+              <button onClick={() => void copyToken()}>
+                <Copy size={13} /> Copy
+              </button>
+            </>
+          ) : (
+            <span className="muted" style={{ fontSize: 'var(--fs-sm)' }}>
+              Generated the first time Tether starts with access enabled. Turn it on above, then restart.
+            </span>
+          )}
+        </div>
         <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 10 }}>
-          Changing any of these takes effect after you restart Tether. The access token lives in
-          <span className="mono"> local-api-token.txt</span> inside the data folder shown below — share it only with agents you trust.
+          Changing any of these takes effect after you restart Tether. This token is unique to this computer and
+          never syncs to teammates — share it only with agents you trust.
         </p>
       </Section>
 

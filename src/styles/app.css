@@ -288,6 +288,16 @@
 }
 .toast.error { border-color: var(--danger); }
 
+/* ---------- Settings > Local agent access: token row ---------- */
+.token-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.token-row label { font-size: var(--fs-sm); color: var(--text-secondary); }
+.token-field {
+  flex: 1;
+  min-width: 200px;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.4px;
+}
+
 /* ---------- Settings > About ---------- */
 .about-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .about-logo {
