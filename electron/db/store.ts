@@ -201,18 +201,31 @@ export class Store {
     this.events.onChange({ entity: 'activity', entityId: itemId ?? '*' });
   }
 
-  private logActivity(itemId: string | null, kind: string, field?: string | null, oldV?: unknown, newV?: unknown): void {
+  /**
+   * `actorId`/`at` default to us and now, which is right for local edits. Ops applied from
+   * a teammate pass their own — activity is not a synced entity (the op-log already carries
+   * who did what and when), so remote activity is derived here from the op, not shipped.
+   */
+  private logActivity(
+    itemId: string | null,
+    kind: string,
+    field?: string | null,
+    oldV?: unknown,
+    newV?: unknown,
+    actorId?: string,
+    at?: string,
+  ): void {
     this.db
       .prepare('INSERT INTO activity(id, item_id, actor_id, kind, field, old_value, new_value, at) VALUES(?,?,?,?,?,?,?,?)')
       .run(
         crypto.randomUUID(),
         itemId,
-        this.actorId,
+        actorId ?? this.actorId,
         kind,
         field ?? null,
         oldV == null ? null : String(oldV).slice(0, 8000),
         newV == null ? null : String(newV).slice(0, 8000),
-        this.now(),
+        at ?? this.now(),
       );
   }
 
@@ -872,6 +885,9 @@ export class Store {
         this.insertItemRow(item);
       }
       this.witnessIdent(item.type, item.ident);
+      // Derive the teammate's activity from their op, so their work shows in Activity
+      // rather than only their rows appearing with no trace of who made them.
+      this.logActivity(item.id, 'created', null, null, item.title, op.actorId, op.at);
       for (const f of Object.keys(record)) this.setFieldClockIfNewer('item', item.id, f, op.lamport, op.deviceId);
       this.replayPendingOps(op.entity, op.entityId);
       return;
@@ -890,6 +906,7 @@ export class Store {
         this.db
           .prepare('INSERT OR IGNORE INTO comments(id, item_id, author_id, body, body_text, created_at, updated_at, deleted) VALUES(?,?,?,?,?,?,?,?)')
           .run(r.id, r.itemId, r.authorId, r.body, r.bodyText, r.createdAt, r.updatedAt, r.deleted ?? 0);
+        this.logActivity(r.itemId, 'comment', null, null, (r.bodyText ?? '').slice(0, 200), op.actorId, op.at);
       },
       milestone: () => {
         const r = record as unknown as Milestone;
@@ -1025,6 +1042,7 @@ export class Store {
     if (Object.keys(winning).length === 0) return;
 
     if (op.entity === 'item') {
+      const before = this.getItem(op.entityId);
       // Ident set may collide locally — resolve with the same smaller-uuid-keeps rule.
       if ('ident' in winning) {
         const holder = this.db.prepare('SELECT id, type FROM items WHERE ident=?').get(String(winning.ident)) as
@@ -1047,6 +1065,23 @@ export class Store {
         }
       }
       this.applyItemFields(op.entityId, winning);
+      // Mirror updateItem's local logging so a teammate's change reads the same as ours:
+      // one entry per field, with body edits collapsed into a single 'edited' entry.
+      if (before) {
+        const prev = before as unknown as Record<string, unknown>;
+        for (const [k, v] of Object.entries(winning)) {
+          if (k === 'updatedAt' || k === 'updatedBy' || k === 'body' || k === 'bodyText') continue;
+          this.logActivity(
+            op.entityId, 'updated', k, prev[k],
+            JSON_ITEM_FIELDS.has(k) ? JSON.stringify(v) : v,
+            op.actorId, op.at,
+          );
+        }
+        if ('body' in winning || 'bodyText' in winning) {
+          const newText = 'bodyText' in winning ? String(winning.bodyText ?? '') : before.bodyText;
+          this.logActivity(op.entityId, 'edited', 'body', before.bodyText, newText, op.actorId, op.at);
+        }
+      }
       return;
     }
 
@@ -1086,6 +1121,9 @@ export class Store {
     }
     this.db.prepare(`UPDATE ${table} SET deleted=1 WHERE id=?`).run(op.entityId);
     this.setFieldClock(op.entity, op.entityId, 'deleted', op.lamport, op.deviceId);
+    if (op.entity === 'item') {
+      this.logActivity(op.entityId, 'deleted', null, null, null, op.actorId, op.at);
+    }
   }
 
   // ---------- conflicts ----------
