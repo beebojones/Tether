@@ -1,8 +1,8 @@
-// Local read API — a loopback HTTP surface so a trusted local agent (Claude, via
-// the tether-mcp bridge) can READ Tether data. It reuses the Store, exactly like
-// the IPC layer does, so it never touches SQLite directly and the op-log / sync
-// invariants hold. Posture: OFF by default, 127.0.0.1 only, bearer-token gated,
-// READ-ONLY (no mutation routes exist yet — writes are a later, opt-in phase).
+// Local API — a loopback HTTP surface so a trusted local agent (Claude, via the
+// tether-mcp bridge) can read, and optionally write, Tether data. It reuses the Store,
+// exactly like the IPC layer does, so it never touches SQLite directly and the op-log /
+// sync invariants hold. Posture: OFF by default, 127.0.0.1 only, bearer-token gated,
+// reads and writes behind separate gates (writes off unless explicitly enabled).
 
 import http from 'node:http';
 import fs from 'node:fs';
@@ -13,6 +13,7 @@ import type { Store } from './db/store';
 import type { SyncEngine } from './sync/engine';
 import type { DbContext } from './db/db';
 import type { Settings } from './settings';
+import { ITEM_TYPES } from '../shared/types';
 import type { ItemFilter, ItemSort, ItemType, WorkItem } from '../shared/types';
 
 export interface LocalApiDeps {
@@ -27,6 +28,41 @@ export interface LocalApiHandle {
   close: () => void;
   port: number;
   tokenPath: string;
+}
+
+const ZERO_ONE_FIELDS = ['leadershipVisible', 'archived', 'sample'] as const;
+
+/**
+ * Guard the write routes. Unlike the renderer, callers here (agents via MCP, scripts, curl)
+ * do not share our TypeScript types, so their JSON reaches the Store unchecked. Reject what
+ * would corrupt data; coerce what is merely idiomatic JSON.
+ *
+ * Without this, `{type:'blockers'}` — an agent pluralising — returned 201 and wrote an item
+ * with ident "undefined-1" (IDENT_PREFIX has no such key), which then synced to teammates;
+ * and `leadershipVisible: true` returned a 500 leaking better-sqlite3's bind error, because
+ * the column is 0|1.
+ */
+function sanitizeItemInput(
+  b: Record<string, unknown>,
+): { error: string } | { value: Record<string, unknown> } {
+  const v: Record<string, unknown> = { ...b };
+
+  if (v.type !== undefined && !(ITEM_TYPES as readonly string[]).includes(v.type as string)) {
+    return { error: `type must be one of: ${ITEM_TYPES.join(', ')}` };
+  }
+  for (const f of ZERO_ONE_FIELDS) {
+    const raw = v[f];
+    if (raw === undefined) continue;
+    if (typeof raw === 'boolean') v[f] = raw ? 1 : 0; // booleans are the natural JSON here
+    else if (raw !== 0 && raw !== 1) return { error: `${f} must be 0, 1, true or false` };
+  }
+  if (v.extra !== undefined && (typeof v.extra !== 'object' || v.extra === null || Array.isArray(v.extra))) {
+    return { error: 'extra must be an object' };
+  }
+  if (v.tags !== undefined && (!Array.isArray(v.tags) || v.tags.some((t) => typeof t !== 'string'))) {
+    return { error: 'tags must be an array of strings' };
+  }
+  return { value: v };
 }
 
 /** Token lives in its own file (settings.json stays secret-free), 0600 perms. */
@@ -145,13 +181,17 @@ export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
       if (method === 'POST' && p === '/items') {
         const b = await readBody(req);
         if (!b.type || !String(b.title ?? '').trim()) return json(res, 400, { error: 'type and title are required' });
-        const item = store.createItem(b as unknown as Partial<WorkItem> & { type: ItemType; title: string });
+        const clean = sanitizeItemInput(b);
+        if ('error' in clean) return json(res, 400, clean);
+        const item = store.createItem(clean.value as unknown as Partial<WorkItem> & { type: ItemType; title: string });
         sync.noteLocalChange();
         return json(res, 201, item);
       }
       if (method === 'PATCH' && (m = p.match(/^\/items\/([^/]+)$/))) {
         const b = await readBody(req);
-        const item = store.updateItem(decodeURIComponent(m[1]), b as Partial<WorkItem>);
+        const clean = sanitizeItemInput(b);
+        if ('error' in clean) return json(res, 400, clean);
+        const item = store.updateItem(decodeURIComponent(m[1]), clean.value as Partial<WorkItem>);
         sync.noteLocalChange();
         return json(res, 200, item);
       }
