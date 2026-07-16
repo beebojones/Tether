@@ -214,11 +214,12 @@ export class Store {
     newV?: unknown,
     actorId?: string,
     at?: string,
-  ): void {
-    this.db
-      .prepare('INSERT INTO activity(id, item_id, actor_id, kind, field, old_value, new_value, at) VALUES(?,?,?,?,?,?,?,?)')
+    id?: string,
+  ): number {
+    const info = this.db
+      .prepare('INSERT OR IGNORE INTO activity(id, item_id, actor_id, kind, field, old_value, new_value, at) VALUES(?,?,?,?,?,?,?,?)')
       .run(
-        crypto.randomUUID(),
+        id ?? crypto.randomUUID(),
         itemId,
         actorId ?? this.actorId,
         kind,
@@ -227,6 +228,81 @@ export class Store {
         newV == null ? null : String(newV).slice(0, 8000),
         at ?? this.now(),
       );
+    return info.changes;
+  }
+
+  /** Stable per-op activity id, so deriving the same op twice is a no-op. */
+  private opActivityId(opId: string, field?: string): string {
+    return field ? `${opId}:${field}` : opId;
+  }
+
+  /**
+   * Rebuild activity for ops that arrived from other devices before we derived activity on
+   * apply (i.e. a teammate's whole history to date). Ids come from the op id and inserts are
+   * OR IGNORE, so this is idempotent and cannot double up with the live apply path — safe to
+   * run on every boot.
+   *
+   * Old values are not recoverable for 'set' ops (the op carries the new value and a causal
+   * base, not the prior value), so those entries render as "changed X to Y" without a from.
+   */
+  backfillRemoteActivity(): number {
+    const rows = this.db
+      .prepare(
+        `SELECT op_id, actor_id, at, entity, entity_id, action, payload FROM oplog
+          WHERE device_id != ? AND entity IN ('item','comment')`,
+      )
+      .all(this.deviceId) as Array<{
+      op_id: string; actor_id: string; at: string; entity: string; entity_id: string;
+      action: string; payload: string;
+    }>;
+
+    let added = 0;
+    const tx = this.db.transaction(() => {
+      for (const r of rows) {
+        let payload: Record<string, unknown>;
+        try { payload = JSON.parse(r.payload || '{}'); } catch { continue; }
+        const record = (payload.record ?? {}) as Record<string, unknown>;
+
+        if (r.entity === 'comment') {
+          if (r.action !== 'create') continue;
+          added += this.logActivity(
+            (record.itemId as string) ?? null, 'comment', null, null,
+            String(record.bodyText ?? '').slice(0, 200),
+            r.actor_id, r.at, this.opActivityId(r.op_id),
+          );
+          continue;
+        }
+
+        if (r.action === 'create') {
+          added += this.logActivity(
+            r.entity_id, 'created', null, null, record.title,
+            r.actor_id, r.at, this.opActivityId(r.op_id),
+          );
+        } else if (r.action === 'set') {
+          const fields = (payload.fields ?? {}) as Record<string, unknown>;
+          for (const [k, v] of Object.entries(fields)) {
+            if (k === 'updatedAt' || k === 'updatedBy' || k === 'body' || k === 'bodyText') continue;
+            added += this.logActivity(
+              r.entity_id, 'updated', k, null, JSON_ITEM_FIELDS.has(k) ? JSON.stringify(v) : v,
+              r.actor_id, r.at, this.opActivityId(r.op_id, k),
+            );
+          }
+          if ('body' in fields || 'bodyText' in fields) {
+            added += this.logActivity(
+              r.entity_id, 'edited', 'body', null, String(fields.bodyText ?? ''),
+              r.actor_id, r.at, this.opActivityId(r.op_id, 'body'),
+            );
+          }
+        } else if (r.action === 'delete') {
+          added += this.logActivity(
+            r.entity_id, 'deleted', null, null, null,
+            r.actor_id, r.at, this.opActivityId(r.op_id),
+          );
+        }
+      }
+    });
+    tx();
+    return added;
   }
 
   // ---------- items ----------
@@ -886,8 +962,9 @@ export class Store {
       }
       this.witnessIdent(item.type, item.ident);
       // Derive the teammate's activity from their op, so their work shows in Activity
-      // rather than only their rows appearing with no trace of who made them.
-      this.logActivity(item.id, 'created', null, null, item.title, op.actorId, op.at);
+      // rather than only their rows appearing with no trace of who made them. The id comes
+      // from the op so backfillRemoteActivity() can't re-add what we already derived.
+      this.logActivity(item.id, 'created', null, null, item.title, op.actorId, op.at, this.opActivityId(op.opId));
       for (const f of Object.keys(record)) this.setFieldClockIfNewer('item', item.id, f, op.lamport, op.deviceId);
       this.replayPendingOps(op.entity, op.entityId);
       return;
@@ -906,7 +983,7 @@ export class Store {
         this.db
           .prepare('INSERT OR IGNORE INTO comments(id, item_id, author_id, body, body_text, created_at, updated_at, deleted) VALUES(?,?,?,?,?,?,?,?)')
           .run(r.id, r.itemId, r.authorId, r.body, r.bodyText, r.createdAt, r.updatedAt, r.deleted ?? 0);
-        this.logActivity(r.itemId, 'comment', null, null, (r.bodyText ?? '').slice(0, 200), op.actorId, op.at);
+        this.logActivity(r.itemId, 'comment', null, null, (r.bodyText ?? '').slice(0, 200), op.actorId, op.at, this.opActivityId(op.opId));
       },
       milestone: () => {
         const r = record as unknown as Milestone;
@@ -1074,12 +1151,15 @@ export class Store {
           this.logActivity(
             op.entityId, 'updated', k, prev[k],
             JSON_ITEM_FIELDS.has(k) ? JSON.stringify(v) : v,
-            op.actorId, op.at,
+            op.actorId, op.at, this.opActivityId(op.opId, k),
           );
         }
         if ('body' in winning || 'bodyText' in winning) {
           const newText = 'bodyText' in winning ? String(winning.bodyText ?? '') : before.bodyText;
-          this.logActivity(op.entityId, 'edited', 'body', before.bodyText, newText, op.actorId, op.at);
+          this.logActivity(
+            op.entityId, 'edited', 'body', before.bodyText, newText,
+            op.actorId, op.at, this.opActivityId(op.opId, 'body'),
+          );
         }
       }
       return;
@@ -1122,7 +1202,7 @@ export class Store {
     this.db.prepare(`UPDATE ${table} SET deleted=1 WHERE id=?`).run(op.entityId);
     this.setFieldClock(op.entity, op.entityId, 'deleted', op.lamport, op.deviceId);
     if (op.entity === 'item') {
-      this.logActivity(op.entityId, 'deleted', null, null, null, op.actorId, op.at);
+      this.logActivity(op.entityId, 'deleted', null, null, null, op.actorId, op.at, this.opActivityId(op.opId));
     }
   }
 

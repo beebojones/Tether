@@ -96,6 +96,12 @@ if (!gotLock) {
     });
     if (currentUser) store.upsertUser(currentUser);
 
+    // Teammates' ops used to apply without leaving any activity, so their history was
+    // invisible here. Rebuild it from the op-log we already hold. Idempotent (activity ids
+    // derive from op ids), so this is a no-op once caught up.
+    const derived = store.backfillRemoteActivity();
+    if (derived > 0) console.log(`[tether] derived ${derived} activity entries from teammates' ops`);
+
     const sync = new SyncEngine(store, currentUser?.name ?? 'Unknown', (s) =>
       win?.webContents.send('sync:status', s),
     );
