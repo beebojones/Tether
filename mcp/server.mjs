@@ -43,11 +43,29 @@ const TOOLS = [
     inputSchema: { type: 'object', properties: {} } },
   { name: 'tether_list_users', description: 'List users.', method: 'GET', path: () => '/users',
     inputSchema: { type: 'object', properties: {} } },
+
+  // ---- write tools (only work when Tether has writes enabled; else API returns 403) ----
+  { name: 'tether_create_item', description: 'Create a work item (requires writes enabled). Args: {type, title, status?, priority?, description?, assigneeId?}',
+    method: 'POST', path: () => '/items',
+    inputSchema: { type: 'object', properties: { type: { type: 'string' }, title: { type: 'string' }, status: { type: 'string' }, priority: { type: 'string' }, description: { type: 'string' }, assigneeId: { type: 'string' } }, required: ['type', 'title'] },
+    body: (a) => a },
+  { name: 'tether_update_item', description: 'Update fields on an item (writes). Args: {id, ...fields}',
+    method: 'PATCH', path: (a) => `/items/${encodeURIComponent(a.id)}`,
+    inputSchema: { type: 'object', properties: { id: { type: 'string' }, title: { type: 'string' }, status: { type: 'string' }, priority: { type: 'string' }, description: { type: 'string' }, assigneeId: { type: 'string' } }, required: ['id'] },
+    body: (a) => { const { id, ...rest } = a; return rest; } },
+  { name: 'tether_archive_item', description: 'Archive or unarchive an item (writes). Args: {id, archived?}',
+    method: 'POST', path: (a) => `/items/${encodeURIComponent(a.id)}/archive`,
+    inputSchema: { type: 'object', properties: { id: { type: 'string' }, archived: { type: 'boolean' } }, required: ['id'] },
+    body: (a) => ({ archived: a.archived !== false }) },
+  { name: 'tether_add_comment', description: 'Add a comment to an item (writes). Args: {id, body, bodyText?}',
+    method: 'POST', path: (a) => `/items/${encodeURIComponent(a.id)}/comments`,
+    inputSchema: { type: 'object', properties: { id: { type: 'string' }, body: { type: 'string' }, bodyText: { type: 'string' } }, required: ['id', 'body'] },
+    body: (a) => ({ body: a.body, bodyText: a.bodyText ?? a.body }) },
 ];
 
 async function callApi(tool, args) {
   const opts = { method: tool.method, headers: { authorization: `Bearer ${TOKEN}` } };
-  if (tool.method === 'POST') {
+  if (tool.method === 'POST' || tool.method === 'PATCH') {
     opts.headers['content-type'] = 'application/json';
     opts.body = JSON.stringify(tool.body ? tool.body(args) : {});
   }

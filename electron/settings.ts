@@ -20,6 +20,10 @@ export interface AppSettings {
   viewPrefs: ViewPrefs; // per-user Board/Dashboard layout; local-only, never synced
   localApiEnabled: boolean; // loopback read API for local agents (off by default). Token lives in local-api-token.txt, not here.
   localApiPort: number;
+  localApiAllowWrites: boolean; // second gate: allow the local API to MUTATE data (off by default; reads can be on without this)
+  autoBackup: boolean; // timed integrity-gated snapshots with rolling retention
+  backupIntervalMin: number;
+  backupRetention: number; // how many snapshots to keep per location
 }
 
 const DEFAULTS: AppSettings = {
@@ -32,6 +36,10 @@ const DEFAULTS: AppSettings = {
   viewPrefs: {},
   localApiEnabled: false,
   localApiPort: 8787,
+  localApiAllowWrites: false,
+  autoBackup: true,
+  backupIntervalMin: 15,
+  backupRetention: 20,
 };
 
 export class Settings {

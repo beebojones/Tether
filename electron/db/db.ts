@@ -23,6 +23,7 @@ export interface DbContext {
 export function openDatabase(dataDir: string): DbContext {
   fs.mkdirSync(dataDir, { recursive: true });
   const dbPath = path.join(dataDir, 'tether.db');
+  applyPendingRestore(dataDir, dbPath); // swap in a staged restore before opening anything
   const existed = fs.existsSync(dbPath);
 
   const db = new Database(dbPath);
@@ -109,12 +110,116 @@ export function setMeta(db: DB, key: string, value: string): void {
   ).run(key, value);
 }
 
-/** Manual backup: consistent snapshot via SQLite backup API. Returns backup path. */
-export async function backupDatabase(ctx: DbContext): Promise<string> {
+export interface BackupOptions {
+  retention?: number; // keep newest N tether-*.db per location (default 20)
+  offMachineDir?: string | null; // e.g. <syncFolder>/backups — disaster copy
+}
+
+/**
+ * Consistent snapshot via the SQLite backup API (safe while the app runs).
+ * Integrity-gated: refuses to snapshot a db that fails quick_check, so a good
+ * backup is never overwritten by a corrupt one. Prunes to `retention` per
+ * location and, if given, copies off-machine into the synced folder.
+ */
+export async function backupDatabase(ctx: DbContext, opts: BackupOptions = {}): Promise<string> {
+  const check = ctx.db.pragma('quick_check', { simple: true });
+  if (check !== 'ok') throw new Error(`Refusing to back up: integrity check failed (${check}).`);
+
+  const keep = opts.retention ?? 20;
   const backupDir = path.join(ctx.dataDir, 'backups');
   fs.mkdirSync(backupDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const dest = path.join(backupDir, `tether-${stamp}.db`);
   await ctx.db.backup(dest);
+  pruneBackups(backupDir, keep);
+
+  if (opts.offMachineDir) {
+    try {
+      fs.mkdirSync(opts.offMachineDir, { recursive: true });
+      fs.copyFileSync(dest, path.join(opts.offMachineDir, `tether-${stamp}.db`));
+      pruneBackups(opts.offMachineDir, keep);
+    } catch (err) {
+      console.error('[tether] off-machine backup copy failed:', err);
+    }
+  }
   return dest;
+}
+
+/** Keep only the newest `keep` tether-*.db files in a directory. */
+function pruneBackups(dir: string, keep: number): void {
+  let files: string[];
+  try {
+    files = fs.readdirSync(dir).filter((f) => /^tether-.*\.db$/.test(f));
+  } catch {
+    return;
+  }
+  if (files.length <= keep) return;
+  const byNewest = files
+    .map((f) => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs }))
+    .sort((a, b) => b.t - a.t);
+  for (const { f } of byNewest.slice(keep)) {
+    try {
+      fs.rmSync(path.join(dir, f), { force: true });
+    } catch {
+      /* best-effort */
+    }
+  }
+}
+
+export interface BackupInfo {
+  name: string;
+  size: number;
+  mtime: string;
+}
+
+/** List local snapshots, newest first. */
+export function listBackups(ctx: DbContext): BackupInfo[] {
+  const dir = path.join(ctx.dataDir, 'backups');
+  try {
+    return fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.db'))
+      .map((f) => {
+        const st = fs.statSync(path.join(dir, f));
+        return { name: f, size: st.size, mtime: new Date(st.mtimeMs).toISOString() };
+      })
+      .sort((a, b) => (a.mtime < b.mtime ? 1 : -1));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Validate a backup and stage it for restore on next launch. We never swap the
+ * live db mid-session; the swap happens in applyPendingRestore() before open.
+ */
+export function stageRestore(ctx: DbContext, backupName: string): { restartRequired: true } {
+  if (!/^[\w.\-]+\.db$/.test(backupName)) throw new Error('Invalid backup name');
+  const src = path.join(ctx.dataDir, 'backups', backupName);
+  if (!fs.existsSync(src)) throw new Error('Backup not found');
+  const probe = new Database(src, { readonly: true });
+  try {
+    const ok = probe.pragma('quick_check', { simple: true });
+    if (ok !== 'ok') throw new Error(`Backup failed integrity check (${ok})`);
+  } finally {
+    probe.close();
+  }
+  fs.copyFileSync(src, path.join(ctx.dataDir, 'restore-pending.db'));
+  return { restartRequired: true };
+}
+
+/** If a restore was staged, quarantine the current db and swap the backup in. */
+function applyPendingRestore(dataDir: string, dbPath: string): void {
+  const pending = path.join(dataDir, 'restore-pending.db');
+  if (!fs.existsSync(pending)) return;
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  if (fs.existsSync(dbPath)) {
+    fs.copyFileSync(dbPath, `${dbPath}.pre-restore-${stamp}`);
+    for (const suffix of ['-wal', '-shm']) {
+      const f = dbPath + suffix;
+      if (fs.existsSync(f)) fs.rmSync(f, { force: true });
+    }
+  }
+  fs.renameSync(pending, dbPath);
+  console.log('[tether] applied staged restore from backup');
 }

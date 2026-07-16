@@ -10,7 +10,7 @@ import type { SyncEngine } from './sync/engine';
 import { FolderTransport } from './sync/transport';
 import type { AttachmentManager } from './attachments';
 import type { Settings, UserIdentity } from './settings';
-import { backupDatabase, type DbContext } from './db/db';
+import { backupDatabase, listBackups, stageRestore, type DbContext } from './db/db';
 import { loadSeedData } from './db/seed';
 import { checkForUpdates, installPendingUpdate } from './updater';
 import type { ItemFilter, ItemSort, ItemType, LinkKind, Priority, WorkItem } from '../shared/types';
@@ -37,7 +37,12 @@ export function registerIpc(deps: IpcDeps): void {
     deviceId: ctx.deviceId,
   }));
 
-  ipcMain.handle('app:backup', async () => backupDatabase(ctx));
+  ipcMain.handle('app:backup', async () => {
+    const off = settings.get().syncFolder ? path.join(settings.get().syncFolder!, 'backups') : null;
+    return backupDatabase(ctx, { retention: settings.get().backupRetention, offMachineDir: off });
+  });
+  ipcMain.handle('app:backups:list', () => listBackups(ctx));
+  ipcMain.handle('app:backups:restore', (_e, name: string) => stageRestore(ctx, name));
 
   ipcMain.handle('app:checkUpdate', async () =>
     checkForUpdates(deps.getWindow(), settings.get().syncFolder, app.getVersion()),

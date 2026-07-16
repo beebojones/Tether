@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path from 'node:path';
-import { openDatabase } from './db/db';
+import { openDatabase, backupDatabase } from './db/db';
 import { Store } from './db/store';
 import { SyncEngine } from './sync/engine';
 import { FolderTransport } from './sync/transport';
@@ -111,8 +111,23 @@ if (!gotLock) {
     // Optional loopback read API for local agents (Claude via tether-mcp).
     // OFF unless settings.localApiEnabled or TETHER_LOCAL_API=1. Reuses Store,
     // so it can never bypass the op-log / sync path.
-    const localApi = startLocalApi({ store, ctx, settings, userDataDir: userData });
+    const localApi = startLocalApi({ store, ctx, sync, settings, userDataDir: userData });
     app.on('before-quit', () => localApi?.close());
+
+    // Timed, integrity-gated snapshots with rolling retention. Copies off-machine
+    // into <syncFolder>/backups when a sync folder is set, so a dead disk can't
+    // take both the db and its backups. The op-log sync remains the real-time layer.
+    if (settings.get().autoBackup) {
+      const runBackup = () => {
+        const cfg = settings.get();
+        const off = cfg.syncFolder ? path.join(cfg.syncFolder, 'backups') : null;
+        backupDatabase(ctx, { retention: cfg.backupRetention, offMachineDir: off })
+          .then((p) => console.log('[tether] auto-backup ->', p))
+          .catch((err) => console.error('[tether] auto-backup failed:', err));
+      };
+      setTimeout(runBackup, 30_000); // one fresh snapshot shortly after launch
+      setInterval(runBackup, Math.max(1, settings.get().backupIntervalMin) * 60_000);
+    }
 
     createWindow();
 

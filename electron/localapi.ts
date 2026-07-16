@@ -10,12 +10,14 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { app } from 'electron';
 import type { Store } from './db/store';
+import type { SyncEngine } from './sync/engine';
 import type { DbContext } from './db/db';
 import type { Settings } from './settings';
-import type { ItemFilter, ItemSort } from '../shared/types';
+import type { ItemFilter, ItemSort, ItemType, WorkItem } from '../shared/types';
 
 export interface LocalApiDeps {
   store: Store;
+  sync: SyncEngine;
   ctx: DbContext;
   settings: Settings;
   userDataDir: string;
@@ -51,7 +53,8 @@ export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
 
   const port = s.localApiPort || 8787;
   const { token, file: tokenPath } = loadOrCreateToken(deps.userDataDir);
-  const { store, ctx, settings } = deps;
+  const { store, ctx, settings, sync } = deps;
+  const writesEnabled = s.localApiAllowWrites || process.env.TETHER_LOCAL_API_WRITES === '1';
 
   const json = (res: http.ServerResponse, code: number, body: unknown) => {
     res.writeHead(code, { 'content-type': 'application/json' });
@@ -82,7 +85,7 @@ export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
 
       // Unauthenticated liveness probe.
       if (p === '/health') {
-        return json(res, 200, { ok: true, service: 'tether-local-api', mode: 'read-only', version: app.getVersion() });
+        return json(res, 200, { ok: true, service: 'tether-local-api', mode: writesEnabled ? 'read-write' : 'read-only', version: app.getVersion() });
       }
 
       // Everything else needs the bearer token.
@@ -132,6 +135,44 @@ export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
         return item ? json(res, 200, item) : json(res, 404, { error: 'not found' });
       }
 
+      // ---- write routes (opt-in: settings.localApiAllowWrites / TETHER_LOCAL_API_WRITES=1) ----
+      // Any POST/PATCH/DELETE reaching here is a mutation (read POSTs returned above).
+      const isWrite = method === 'POST' || method === 'PATCH' || method === 'DELETE';
+      if (isWrite && !writesEnabled) {
+        return json(res, 403, { error: 'writes disabled', hint: 'set localApiAllowWrites or TETHER_LOCAL_API_WRITES=1' });
+      }
+
+      if (method === 'POST' && p === '/items') {
+        const b = await readBody(req);
+        if (!b.type || !String(b.title ?? '').trim()) return json(res, 400, { error: 'type and title are required' });
+        const item = store.createItem(b as unknown as Partial<WorkItem> & { type: ItemType; title: string });
+        sync.noteLocalChange();
+        return json(res, 201, item);
+      }
+      if (method === 'PATCH' && (m = p.match(/^\/items\/([^/]+)$/))) {
+        const b = await readBody(req);
+        const item = store.updateItem(decodeURIComponent(m[1]), b as Partial<WorkItem>);
+        sync.noteLocalChange();
+        return json(res, 200, item);
+      }
+      if (method === 'POST' && (m = p.match(/^\/items\/([^/]+)\/archive$/))) {
+        const b = await readBody(req);
+        store.archiveItem(decodeURIComponent(m[1]), b.archived !== false);
+        sync.noteLocalChange();
+        return json(res, 200, { ok: true });
+      }
+      if (method === 'DELETE' && (m = p.match(/^\/items\/([^/]+)$/))) {
+        store.deleteItem(decodeURIComponent(m[1]));
+        sync.noteLocalChange();
+        return json(res, 200, { ok: true });
+      }
+      if (method === 'POST' && (m = p.match(/^\/items\/([^/]+)\/comments$/))) {
+        const b = await readBody(req);
+        const c = store.addComment(decodeURIComponent(m[1]), String(b.body ?? ''), String(b.bodyText ?? b.body ?? ''));
+        sync.noteLocalChange();
+        return json(res, 201, c);
+      }
+
       return json(res, 404, { error: 'unknown route', method, path: p });
     } catch (err) {
       return json(res, 500, { error: err instanceof Error ? err.message : String(err) });
@@ -140,7 +181,9 @@ export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
 
   server.on('error', (err) => console.error('[tether] local API error:', err));
   server.listen(port, '127.0.0.1', () => {
-    console.log(`[tether] local READ API listening on http://127.0.0.1:${port}  (token: ${tokenPath})`);
+    console.log(
+      `[tether] local API listening on http://127.0.0.1:${port}  mode=${writesEnabled ? 'READ-WRITE' : 'read-only'}  (token: ${tokenPath})`,
+    );
   });
 
   return { close: () => server.close(), port, tokenPath };
