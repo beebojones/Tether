@@ -195,21 +195,38 @@ def _line_glow(data, threshold, glow_radius):
 
 
 def _face_mask(L, size):
-    """Interior of the head silhouette (for a subtle navy fill). Robust-ish; may be empty."""
+    """Interior of the head silhouette, for the navy face fill.
+
+    The outline often has gaps (a beard, a hair part, the open neck) that let a
+    flood-fill of the exterior leak into the face and leave it hollow. So dilate
+    the line mask first (blur + low threshold) to seal those gaps, then flood the
+    outside from the top corners; whatever the flood can't reach is the face.
+    """
     W, H = size
-    barrier = Image.fromarray(((L > 0.45) * 255).astype(np.uint8), "L")
-    ImageDraw.Draw(barrier).line([(0, H - 1), (W - 1, H - 1)], fill=255, width=3)  # seal neck
+    line = ((L > 0.42) * 255).astype(np.uint8)
+    grow = max(2.0, min(W, H) * 0.013)
+    dil = np.asarray(Image.fromarray(line, "L").filter(ImageFilter.GaussianBlur(grow))) > 8
+    barrier = Image.fromarray((dil * 255).astype(np.uint8), "L")
+    ImageDraw.Draw(barrier).line([(0, H - 1), (W - 1, H - 1)], fill=255, width=int(grow) + 2)  # seal neck
     fill = barrier.copy()
-    for seed in ((0, 0), (W - 1, 0), (0, H - 1), (W - 1, H - 1)):
+    for seed in ((0, 0), (W - 1, 0)):
         try:
-            ImageDraw.floodfill(fill, seed, 128, thresh=10)
+            ImageDraw.floodfill(fill, seed, 128, thresh=8)
         except Exception:
             pass
-    arr = np.asarray(fill)
-    face = arr == 0                                          # not exterior(128), not line(255)
-    if face.mean() < 0.03 or face.mean() > 0.6:
+    face = np.asarray(fill) == 0                             # not exterior(128), not line(255)
+    frac = face.mean()
+    if frac < 0.02 or frac > 0.85:
         return None                                          # detection unreliable -> skip tint
     return face
+
+
+def _shaded_navy(grad):
+    """Navy face fill with a soft top-light and a faint wash of the outline color,
+    so the filled face reads with depth instead of a flat silhouette."""
+    H = grad.shape[0]
+    shade = np.linspace(1.08, 0.6, H, dtype=np.float32)[:, None, None]   # brighter up top
+    return np.clip(NAVY[None, None, :] * shade + grad * 0.10, 0, 255)
 
 
 def _gradient(size, color_a, color_b, mode, angle_deg, position, softness=1.0):
@@ -256,7 +273,7 @@ def recolor_flat(data, color_a=DEFAULT_A, color_b=DEFAULT_B, mode="linear",
     base = np.zeros_like(grad) if bg is None else np.broadcast_to(
         hex_rgb(bg)[None, None, :], grad.shape).copy()
     if face_tint and face is not None:
-        base[face] = NAVY
+        base[face] = _shaded_navy(grad)[face]
     rgb = base * (1 - cov) + grad * cov
 
     if bg is None:
