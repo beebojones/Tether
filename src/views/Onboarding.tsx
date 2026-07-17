@@ -8,6 +8,7 @@ import './onboarding.css';
 const PRESETS = [
   { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF' },
   { id: 'mark', name: 'Mark Bidinger', initials: 'MB', color: '#4CC38A' },
+  { id: 'allen', name: 'Allen Hill', initials: 'AH', color: '#E0A458' },
 ];
 
 export default function Onboarding() {
