@@ -5,9 +5,15 @@ import { api, type AppInfo, type BackupInfo } from '../api';
 import { useApp } from '../store';
 import { fmtDateTime, Avatar } from '../components/ui';
 import TetherMark from '../components/TetherMark';
+import type { User } from '../../shared/types';
 
 // Read once at load: a long-running window shouldn't show a stale year at New Year.
 const COPYRIGHT_YEAR = new Date().getFullYear();
+
+// Soft admin: whose Settings shows the Team panel. NOT an enforced permission — Tether is
+// local-first and the shared folder grants full write to everyone — this only hides the UI
+// from non-admins. Anyone determined could still create members another way.
+const ADMIN_IDS = new Set(['john']);
 
 export default function SettingsView() {
   const { settings, setSettings, syncStatus, users, refreshMeta } = useApp();
@@ -18,6 +24,8 @@ export default function SettingsView() {
   const [tokenShown, setTokenShown] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null);
   const tokenField = useRef<HTMLInputElement>(null);
+  // Which user id the next avatar file selection applies to: self, or a teammate via the admin panel.
+  const [avatarTarget, setAvatarTarget] = useState<string | null>(null);
 
   useEffect(() => {
     void api.app.info().then(setInfo);
@@ -83,9 +91,16 @@ export default function SettingsView() {
   const currentUser = settings?.currentUser ?? null;
   const dbUser = users.find((u) => u.id === currentUser?.id) ?? null;
 
-  // Downscale any chosen image to a 256px square (cover) data URL, then store it.
+  // Open the file picker aimed at a specific user (self, or a teammate from the admin panel).
+  const pickAvatarFor = (id: string) => {
+    setAvatarTarget(id);
+    avatarInput.current?.click();
+  };
+
+  // Downscale any chosen image to a 256px square (cover) data URL, then store it on the target user.
   const onAvatarFile = (file: File | undefined) => {
-    if (!file || !currentUser) return;
+    const targetId = avatarTarget ?? currentUser?.id ?? null;
+    if (!file || !targetId) return;
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
@@ -100,7 +115,7 @@ export default function SettingsView() {
         const w = img.width * scale;
         const h = img.height * scale;
         ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
-        void api.users.setAvatar(currentUser.id, canvas.toDataURL('image/png')).then(() => {
+        void api.users.setAvatar(targetId, canvas.toDataURL('image/png')).then(() => {
           void refreshMeta();
           flash('Avatar updated.');
         });
@@ -110,9 +125,8 @@ export default function SettingsView() {
     reader.readAsDataURL(file);
   };
 
-  const removeAvatar = () => {
-    if (!currentUser) return;
-    void api.users.setAvatar(currentUser.id, null).then(() => {
+  const removeAvatarFor = (id: string) => {
+    void api.users.setAvatar(id, null).then(() => {
       void refreshMeta();
       flash('Avatar removed.');
     });
@@ -152,10 +166,10 @@ export default function SettingsView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
           <Avatar user={dbUser} size="lg" />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={() => avatarInput.current?.click()} disabled={!currentUser}>
+            <button onClick={() => currentUser && pickAvatarFor(currentUser.id)} disabled={!currentUser}>
               {dbUser?.avatar ? 'Change avatar…' : 'Set avatar…'}
             </button>
-            {dbUser?.avatar && <button className="danger" onClick={removeAvatar}>Remove</button>}
+            {dbUser?.avatar && currentUser && <button className="danger" onClick={() => removeAvatarFor(currentUser.id)}>Remove</button>}
           </div>
           <input
             ref={avatarInput}
@@ -176,6 +190,16 @@ export default function SettingsView() {
           Make one with the Neon Avatar Maker (tools/avatar-maker), export a chip, and set it here. Your avatar syncs to teammates.
         </p>
       </Section>
+
+      {currentUser && ADMIN_IDS.has(currentUser.id) && (
+        <TeamAdmin
+          users={users}
+          flash={flash}
+          refresh={refreshMeta}
+          onPickAvatar={pickAvatarFor}
+          onRemoveAvatar={removeAvatarFor}
+        />
+      )}
 
       <Section title="Project">
         <div className="form-row" style={{ maxWidth: 320 }}>
@@ -458,6 +482,108 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 style={{ fontSize: 'var(--fs-md)', fontWeight: 700, marginBottom: 10 }}>{title}</h2>
       {children}
     </section>
+  );
+}
+
+// Admin-only: create members and manage everyone's avatar. All writes reuse the same synced
+// upsert/setAvatar the rest of the app uses, so they propagate through the op-log like any edit.
+function TeamAdmin({ users, flash, refresh, onPickAvatar, onRemoveAvatar }: {
+  users: User[];
+  flash: (m: string) => void;
+  refresh: () => void;
+  onPickAvatar: (id: string) => void;
+  onRemoveAvatar: (id: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [id, setId] = useState('');
+  const [initials, setInitials] = useState('');
+  const [color, setColor] = useState('#6E8BFF');
+  const [busy, setBusy] = useState(false);
+
+  // Same derivations onboarding uses, so a member created here matches one who self-onboards.
+  const deriveId = (n: string) => n.trim().toLowerCase().split(/\s+/)[0] ?? '';
+  const deriveInitials = (n: string) => n.trim().split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+
+  const create = async () => {
+    const finalName = name.trim();
+    const finalId = (id.trim() || deriveId(finalName)).toLowerCase();
+    const finalInitials = (initials.trim() || deriveInitials(finalName)).toUpperCase().slice(0, 3);
+    if (!finalName || !finalId || busy) return;
+    if (users.some((u) => u.id === finalId)) {
+      flash(`A member with id "${finalId}" already exists — pick a different id, or set their avatar above.`);
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.users.upsert({ id: finalId, name: finalName, initials: finalInitials, color });
+      refresh();
+      flash(`Added ${finalName} (${finalId}) — they sync to everyone and appear in owner menus.`);
+      setName(''); setId(''); setInitials(''); setColor('#6E8BFF');
+    } catch (e) {
+      flash(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Section title="Team (admin)">
+      <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 10 }}>
+        Set up members and their avatars for the whole team. Everything here syncs to everyone.
+        This panel is shown only to you — a convenience, not an enforced permission.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+        {users.map((u) => (
+          <div
+            key={u.id}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px',
+              background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--r-sm)',
+            }}
+          >
+            <Avatar user={u} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: 'var(--text-primary)', fontSize: 'var(--fs-sm)' }}>{u.name}</div>
+              <div className="muted mono" style={{ fontSize: 'var(--fs-xs)' }}>{u.id}</div>
+            </div>
+            <button onClick={() => onPickAvatar(u.id)}>{u.avatar ? 'Change avatar…' : 'Set avatar…'}</button>
+            {u.avatar && <button className="danger" onClick={() => onRemoveAvatar(u.id)}>Remove</button>}
+          </div>
+        ))}
+      </div>
+
+      <h3 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, marginBottom: 8 }}>Add a member</h3>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div className="form-row" style={{ maxWidth: 200 }}>
+          <label htmlFor="tm-name">Full name</label>
+          <input id="tm-name" type="text" placeholder="e.g. Allen Hill" value={name}
+            onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void create()} />
+        </div>
+        <div className="form-row" style={{ maxWidth: 140 }}>
+          <label htmlFor="tm-id">Id (slug)</label>
+          <input id="tm-id" type="text" placeholder={deriveId(name) || 'allen'} value={id}
+            onChange={(e) => setId(e.target.value)} />
+        </div>
+        <div className="form-row" style={{ maxWidth: 90 }}>
+          <label htmlFor="tm-initials">Initials</label>
+          <input id="tm-initials" type="text" placeholder={deriveInitials(name) || 'AH'} value={initials}
+            onChange={(e) => setInitials(e.target.value)} maxLength={3} />
+        </div>
+        <div className="form-row" style={{ maxWidth: 70 }}>
+          <label htmlFor="tm-color">Color</label>
+          <input id="tm-color" type="color" value={color} onChange={(e) => setColor(e.target.value)}
+            style={{ height: 32, padding: 2 }} />
+        </div>
+        <button className="primary" onClick={() => void create()} disabled={!name.trim() || busy}>
+          {busy ? 'Adding…' : 'Add member'}
+        </button>
+      </div>
+      <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 8 }}>
+        The member appears for everyone immediately. When they install Tether and pick this identity, they
+        adopt this row — the avatar and details you set here are preserved.
+      </p>
+    </Section>
   );
 }
 

@@ -103,7 +103,11 @@ interface Bridge {
     for(itemId: string): Promise<ItemVersion[]>;
   };
   activity: { for(itemId: string | null, limit?: number): Promise<ActivityEntry[]> };
-  users: { list(): Promise<User[]>; setAvatar(id: string, avatar: string | null): Promise<User | null> };
+  users: {
+    list(): Promise<User[]>;
+    upsert(u: { id: string; name: string; initials: string; color: string }): Promise<User>;
+    setAvatar(id: string, avatar: string | null): Promise<User | null>;
+  };
   milestones: { list(): Promise<Milestone[]>; upsert(m: Partial<Milestone> & { name: string }): Promise<Milestone> };
   releases: { list(): Promise<Release[]>; upsert(r: Partial<Release> & { name: string }): Promise<Release> };
   views: { list(): Promise<SavedView[]>; save(v: Partial<SavedView> & { name: string; config: Record<string, unknown> }): Promise<SavedView>; delete(id: string): Promise<void> };

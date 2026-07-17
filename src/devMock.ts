@@ -356,7 +356,20 @@ export function installDevMock(): void {
       for: async (itemId: string | null, limit = 100) =>
         (itemId ? activity.filter((a) => a.itemId === itemId) : activity).slice(0, limit),
     },
-    users: { list: async () => users },
+    users: {
+      list: async () => users,
+      upsert: async (u: { id: string; name: string; initials: string; color: string }) => {
+        const existing = users.find((x) => x.id === u.id);
+        if (existing) Object.assign(existing, u);
+        else users.push({ ...u, avatar: null, createdAt: now() });
+        return users.find((x) => x.id === u.id)!;
+      },
+      setAvatar: async (id: string, avatar: string | null) => {
+        const u = users.find((x) => x.id === id);
+        if (u) u.avatar = avatar;
+        return u ?? null;
+      },
+    },
     milestones: { list: async () => milestones, upsert: async (m: Milestone) => m },
     releases: { list: async () => releases, upsert: async (r: Release) => r },
     views: {

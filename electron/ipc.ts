@@ -193,6 +193,19 @@ export function registerIpc(deps: IpcDeps): void {
 
   // ---------- users / milestones / releases / views ----------
   ipcMain.handle('users:list', () => store.listUsers());
+  // Create or update any team member (admin surface). Same synced upsert onboarding uses;
+  // does NOT touch this machine's own identity (settings.currentUser). Validated at the boundary.
+  ipcMain.handle('users:upsert', (_e, u: { id?: unknown; name?: unknown; initials?: unknown; color?: unknown }) => {
+    const id = String(u?.id ?? '').trim().toLowerCase();
+    const name = String(u?.name ?? '').trim();
+    if (!/^[a-z0-9][a-z0-9_-]*$/.test(id)) throw new Error('Member id must be a slug: a letter or digit, then letters, digits, - or _.');
+    if (!name) throw new Error('Member name is required.');
+    const initials = (String(u?.initials ?? '').trim() || name.slice(0, 2)).toUpperCase().slice(0, 3);
+    const color = /^#[0-9a-fA-F]{6}$/.test(String(u?.color ?? '')) ? String(u.color) : '#6E8BFF';
+    const rec = store.upsertUser({ id, name, initials, color });
+    afterMutation();
+    return rec;
+  });
   ipcMain.handle('users:setAvatar', (_e, id: string, avatar: string | null) => {
     if (avatar !== null) {
       if (typeof avatar !== 'string' || !avatar.startsWith('data:image/'))
