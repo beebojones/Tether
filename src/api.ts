@@ -107,6 +107,7 @@ interface Bridge {
     list(): Promise<User[]>;
     upsert(u: { id: string; name: string; initials: string; color: string }): Promise<User>;
     setAvatar(id: string, avatar: string | null): Promise<User | null>;
+    delete(id: string): Promise<User[]>;
   };
   milestones: { list(): Promise<Milestone[]>; upsert(m: Partial<Milestone> & { name: string }): Promise<Milestone> };
   releases: { list(): Promise<Release[]>; upsert(r: Partial<Release> & { name: string }): Promise<Release> };

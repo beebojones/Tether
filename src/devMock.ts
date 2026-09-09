@@ -369,6 +369,11 @@ export function installDevMock(): void {
         if (u) u.avatar = avatar;
         return u ?? null;
       },
+      delete: async (id: string) => {
+        const i = users.findIndex((x) => x.id === id);
+        if (i >= 0) users.splice(i, 1);
+        return users;
+      },
     },
     milestones: { list: async () => milestones, upsert: async (m: Milestone) => m },
     releases: { list: async () => releases, upsert: async (r: Release) => r },

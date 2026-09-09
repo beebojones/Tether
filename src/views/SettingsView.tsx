@@ -14,6 +14,7 @@ const COPYRIGHT_YEAR = new Date().getFullYear();
 // local-first and the shared folder grants full write to everyone — this only hides the UI
 // from non-admins. Anyone determined could still create members another way.
 const ADMIN_IDS = new Set(['john']);
+const NL = String.fromCharCode(10);
 
 export default function SettingsView() {
   const { settings, setSettings, syncStatus, users, refreshMeta } = useApp();
@@ -194,6 +195,7 @@ export default function SettingsView() {
       {currentUser && ADMIN_IDS.has(currentUser.id) && (
         <TeamAdmin
           users={users}
+          selfId={currentUser.id}
           flash={flash}
           refresh={refreshMeta}
           onPickAvatar={pickAvatarFor}
@@ -487,8 +489,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 // Admin-only: create members and manage everyone's avatar. All writes reuse the same synced
 // upsert/setAvatar the rest of the app uses, so they propagate through the op-log like any edit.
-function TeamAdmin({ users, flash, refresh, onPickAvatar, onRemoveAvatar }: {
+function TeamAdmin({ users, selfId, flash, refresh, onPickAvatar, onRemoveAvatar }: {
   users: User[];
+  selfId: string;
   flash: (m: string) => void;
   refresh: () => void;
   onPickAvatar: (id: string) => void;
@@ -503,6 +506,25 @@ function TeamAdmin({ users, flash, refresh, onPickAvatar, onRemoveAvatar }: {
   // Same derivations onboarding uses, so a member created here matches one who self-onboards.
   const deriveId = (n: string) => n.trim().toLowerCase().split(/\s+/)[0] ?? '';
   const deriveInitials = (n: string) => n.trim().split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+
+  // Removing a member is a synced tombstone: they vanish from everyone's owner menus and
+  // this list, while items they own or edited keep their name in history.
+  const remove = async (u: User) => {
+    const ok = window.confirm(
+      'Remove ' + u.name + ' from the team?' + NL + NL +
+        'They disappear from owner and @mention menus on every computer. Work they own or ' +
+        'edited keeps their name in history. If they open Tether with this identity again, ' +
+        'they are re-added automatically.',
+    );
+    if (!ok) return;
+    try {
+      await api.users.delete(u.id);
+      refresh();
+      flash('Removed ' + u.name + ' (' + u.id + ') from the team.');
+    } catch (e) {
+      flash(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   const create = async () => {
     const finalName = name.trim();
@@ -548,7 +570,8 @@ function TeamAdmin({ users, flash, refresh, onPickAvatar, onRemoveAvatar }: {
               <div className="muted mono" style={{ fontSize: 'var(--fs-xs)' }}>{u.id}</div>
             </div>
             <button onClick={() => onPickAvatar(u.id)}>{u.avatar ? 'Change avatar…' : 'Set avatar…'}</button>
-            {u.avatar && <button className="danger" onClick={() => onRemoveAvatar(u.id)}>Remove</button>}
+            {u.avatar && <button onClick={() => onRemoveAvatar(u.id)}>Clear avatar</button>}
+            {u.id !== selfId && <button className="danger" onClick={() => void remove(u)}>Remove</button>}
           </div>
         ))}
       </div>

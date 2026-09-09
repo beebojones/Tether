@@ -320,3 +320,36 @@ test('auditability: soft-delete only, deletes attributed and logged, nothing phy
   assert.ok(act.some((a) => a.kind === 'comment_deleted'));
   ctx.db.close();
 });
+
+test('team: removing a member is a synced soft delete; re-adding revives the row', async () => {
+  const a = mkStore('teamA', 'john');
+  const b = mkStore('teamB', 'mark');
+  const folder = tmp('team');
+
+  a.store.upsertUser({ id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF' });
+  b.store.upsertUser({ id: 'mark', name: 'Mark Bidinger', initials: 'MB', color: '#4CC38A' });
+  a.store.upsertUser({ id: 'jessica', name: 'Jessica Bradford', initials: 'JB', color: '#C77DFF' });
+  await syncBoth(a, b, folder);
+  assert.deepEqual(b.store.listUsers().map((u) => u.id).sort(), ['jessica', 'john', 'mark']);
+
+  // John removes Mark. Mark's own machine sees the removal too.
+  assert.equal(a.store.deleteUser('mark'), true);
+  assert.equal(a.store.deleteUser('mark'), false, 'second delete is a no-op');
+  await syncBoth(a, b, folder);
+  assert.deepEqual(a.store.listUsers().map((u) => u.id).sort(), ['jessica', 'john']);
+  assert.deepEqual(b.store.listUsers().map((u) => u.id).sort(), ['jessica', 'john']);
+
+  // Soft delete: the row and its history stay in the file on both sides.
+  const row = b.ctx.db.prepare('SELECT deleted, name FROM users WHERE id=?').get('mark') as Record<string, unknown>;
+  assert.equal(row.deleted, 1);
+  assert.equal(row.name, 'Mark Bidinger');
+
+  // Re-adding the same id (admin panel or self-onboarding) lifts the tombstone everywhere.
+  b.store.upsertUser({ id: 'mark', name: 'Mark Bidinger', initials: 'MB', color: '#4CC38A' });
+  assert.ok(b.store.listUsers().some((u) => u.id === 'mark'));
+  await syncBoth(a, b, folder);
+  assert.ok(a.store.listUsers().some((u) => u.id === 'mark'), 'revival synced to A');
+
+  a.ctx.db.close();
+  b.ctx.db.close();
+});

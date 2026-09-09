@@ -206,6 +206,16 @@ export function registerIpc(deps: IpcDeps): void {
     afterMutation();
     return rec;
   });
+  // Remove a member for the whole team (soft delete, synced). Refuses to remove this
+  // machine's own identity — that would orphan every op it writes from here on.
+  ipcMain.handle('users:delete', (_e, id: string) => {
+    const target = String(id ?? '').trim().toLowerCase();
+    if (!target) throw new Error('Member id is required.');
+    if (settings.get().currentUser?.id === target) throw new Error('You cannot remove your own identity.');
+    if (!store.deleteUser(target)) throw new Error('That member no longer exists.');
+    afterMutation();
+    return store.listUsers();
+  });
   ipcMain.handle('users:setAvatar', (_e, id: string, avatar: string | null) => {
     if (avatar !== null) {
       if (typeof avatar !== 'string' || !avatar.startsWith('data:image/'))

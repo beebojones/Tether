@@ -310,4 +310,11 @@ UPDATE releases SET created_at = datetime('now'), updated_at = datetime('now') W
     name: 'user-avatar',
     sql: `ALTER TABLE users ADD COLUMN avatar TEXT;`,
   },
+  {
+    version: 5,
+    name: 'user-soft-delete',
+    // Members are removed the same way everything else is: a tombstone that syncs.
+    // Items and comments keep referencing the id, so history still renders.
+    sql: `ALTER TABLE users ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0;`,
+  },
 ];

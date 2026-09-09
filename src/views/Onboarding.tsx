@@ -9,6 +9,7 @@ const PRESETS = [
   { id: 'john', name: 'John Crouch', initials: 'JC', color: '#6E8BFF' },
   { id: 'mark', name: 'Mark Bidinger', initials: 'MB', color: '#4CC38A' },
   { id: 'allen', name: 'Allen Hill', initials: 'AH', color: '#E0A458' },
+  { id: 'jessica', name: 'Jessica Bradford', initials: 'JB', color: '#C77DFF' },
 ];
 
 export default function Onboarding() {

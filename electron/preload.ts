@@ -67,6 +67,7 @@ const api = {
     list: () => invoke('users:list'),
     upsert: (u: { id: string; name: string; initials: string; color: string }) => invoke('users:upsert', u),
     setAvatar: (id: string, avatar: string | null) => invoke('users:setAvatar', id, avatar),
+    delete: (id: string) => invoke('users:delete', id),
   },
   milestones: {
     list: () => invoke('milestones:list'),

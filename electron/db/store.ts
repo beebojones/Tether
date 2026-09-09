@@ -685,21 +685,42 @@ export class Store {
       createdAt: existing ? String(existing.created_at) : this.now(),
     };
     const tx = this.db.transaction(() => {
+      // Re-adding a removed member (same id) revives the row rather than failing on the
+      // primary key — the tombstone is lifted and that lift syncs like any other set.
       this.db
         .prepare(
-          `INSERT INTO users(id, name, initials, color, created_at) VALUES(?,?,?,?,?)
-           ON CONFLICT(id) DO UPDATE SET name=excluded.name, initials=excluded.initials, color=excluded.color`,
+          `INSERT INTO users(id, name, initials, color, created_at, deleted) VALUES(?,?,?,?,?,0)
+           ON CONFLICT(id) DO UPDATE SET name=excluded.name, initials=excluded.initials, color=excluded.color, deleted=0`,
         )
         .run(user.id, user.name, user.initials, user.color, user.createdAt);
       if (!existing) this.localCreate('user', user.id, { ...user });
-      else this.localSet('user', user.id, { name: user.name, initials: user.initials, color: user.color });
+      else {
+        const fields: Record<string, unknown> = { name: user.name, initials: user.initials, color: user.color };
+        if (Number(existing.deleted) === 1) fields.deleted = 0;
+        this.localSet('user', user.id, fields);
+      }
     });
     tx();
+    this.events.onChange({ entity: 'user', entityId: user.id });
     return user;
   }
 
   listUsers(): User[] {
-    return (this.db.prepare('SELECT id, name, initials, color, avatar, created_at AS createdAt FROM users').all() as User[]);
+    return (this.db.prepare('SELECT id, name, initials, color, avatar, created_at AS createdAt FROM users WHERE deleted=0').all() as User[]);
+  }
+
+  /** Remove a member for everyone. Soft delete (tombstone) so records they own or
+      authored keep resolving; emits a synced 'delete' op. Returns false if unknown. */
+  deleteUser(id: string): boolean {
+    const exists = this.db.prepare('SELECT 1 FROM users WHERE id=? AND deleted=0').get(id);
+    if (!exists) return false;
+    const tx = this.db.transaction(() => {
+      this.db.prepare('UPDATE users SET deleted=1 WHERE id=?').run(id);
+      this.localOp('user', id, 'delete', {});
+    });
+    tx();
+    this.events.onChange({ entity: 'user', entityId: id });
+    return true;
   }
 
   /** Set (or clear, with null) a user's avatar image. Emits a synced 'set' op. */
@@ -1000,8 +1021,8 @@ export class Store {
       user: () => {
         const r = record as unknown as User;
         this.db
-          .prepare('INSERT OR IGNORE INTO users(id, name, initials, color, avatar, created_at) VALUES(?,?,?,?,?,?)')
-          .run(r.id, r.name, r.initials, r.color, r.avatar ?? null, r.createdAt);
+          .prepare('INSERT OR IGNORE INTO users(id, name, initials, color, avatar, created_at, deleted) VALUES(?,?,?,?,?,?,?)')
+          .run(r.id, r.name, r.initials, r.color, r.avatar ?? null, r.createdAt, (r as User & { deleted?: number }).deleted ?? 0);
       },
       saved_view: () => {
         const r = record as unknown as SavedView;
@@ -1171,7 +1192,7 @@ export class Store {
       comment: { body: 'body', bodyText: 'body_text', updatedAt: 'updated_at', deleted: 'deleted' },
       milestone: { name: 'name', description: 'description', targetDate: 'target_date', status: 'status', sort: 'sort', deleted: 'deleted' },
       release: { name: 'name', version: 'version', targetDate: 'target_date', status: 'status', goals: 'goals', notes: 'notes', deleted: 'deleted' },
-      user: { name: 'name', initials: 'initials', color: 'color', avatar: 'avatar' },
+      user: { name: 'name', initials: 'initials', color: 'color', avatar: 'avatar', deleted: 'deleted' },
       saved_view: { name: 'name', config: 'config', pinned: 'pinned', deleted: 'deleted' },
       attachment: { description: 'description', deleted: 'deleted' },
     };
