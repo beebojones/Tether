@@ -219,6 +219,15 @@ export function startLocalApi(deps: LocalApiDeps): LocalApiHandle | null {
         sync.noteLocalChange();
         return json(res, 200, { ok: true });
       }
+      // Remove a team member (synced soft delete). Same rules as the Settings panel:
+      // never this machine's own identity, and unknown ids are a 404 not a 500.
+      if (method === 'DELETE' && (m = p.match(/^\/users\/([^/]+)$/))) {
+        const id = decodeURIComponent(m[1]).trim().toLowerCase();
+        if (settings.get().currentUser?.id === id) return json(res, 400, { error: 'cannot remove your own identity' });
+        if (!store.deleteUser(id)) return json(res, 404, { error: 'no such member', id });
+        sync.noteLocalChange();
+        return json(res, 200, { ok: true, users: store.listUsers() });
+      }
       if (method === 'POST' && (m = p.match(/^\/items\/([^/]+)\/comments$/))) {
         const b = await readBody(req);
         const c = store.addComment(decodeURIComponent(m[1]), String(b.body ?? ''), String(b.bodyText ?? b.body ?? ''));

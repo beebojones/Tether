@@ -10,3 +10,6 @@ release/
 .DS_Store
 data/
 shots/
+# local-only: handoff bundles for teammates and the avatar-maker workspace
+Tether-Handoff-*/
+tether-avatars/
