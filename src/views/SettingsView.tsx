@@ -23,6 +23,10 @@ export default function SettingsView() {
   const [backups, setBackups] = useState<BackupInfo[]>([]);
   const [token, setToken] = useState<{ token: string; path: string } | null>(null);
   const [tokenShown, setTokenShown] = useState(false);
+  // Update-check result. Lives here rather than in the page-top toast, and stays put
+  // until the next check, so the answer is still on screen when you read it.
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null);
   const tokenField = useRef<HTMLInputElement>(null);
   // Which user id the next avatar file selection applies to: self, or a teammate via the admin panel.
@@ -147,15 +151,28 @@ export default function SettingsView() {
     flash('Sync disabled — working local-only. Your data stays on this computer.');
   };
 
-  // Main process shows native dialogs for every outcome (up to date, prompt to
-  // install, verification failure). We just trigger it and surface a light note.
+  // Every outcome has to say something, including "nothing to do". This used to flash
+  // into the page-top toast, which is scrolled far above About by the time you click
+  // the button here — so a successful check looked identical to a dead button.
   const checkForUpdates = async () => {
-    flash('Checking the shared folder for updates…');
-    const res = await api.app.checkUpdate();
-    if (res.status === 'up-to-date') flash(`You're on the latest version (${res.current}).`);
-    else if (res.status === 'no-folder') flash('Configure a shared folder to receive updates.');
-    else if (res.status === 'error') flash(`Update check failed: ${res.message}`);
-    else setMsg(null); // 'update-available' → the in-app banner appears
+    setChecking(true);
+    setUpdateMsg('Checking the shared folder…');
+    try {
+      const res = await api.app.checkUpdate();
+      if (res.status === 'up-to-date') {
+        setUpdateMsg(`No update found. You are on the latest version (${res.current}).`);
+      } else if (res.status === 'update-available') {
+        setUpdateMsg(`Tether ${res.version} is available — install it from the banner.`);
+      } else if (res.status === 'no-folder') {
+        setUpdateMsg('No shared folder is configured, so there is nowhere to check. Set one under Collaboration & sync.');
+      } else {
+        setUpdateMsg(`Update check failed: ${res.message}`);
+      }
+    } catch (e) {
+      setUpdateMsg(`Update check failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setChecking(false);
+    }
   };
 
   return (
@@ -468,11 +485,18 @@ export default function SettingsView() {
             <div className="muted about-legal">© {COPYRIGHT_YEAR} John Crouch. All rights reserved.</div>
           </div>
           <div className="about-actions">
-            <button onClick={() => void checkForUpdates()}>
-              <RefreshCw size={13} /> Check for updates
+            <button onClick={() => void checkForUpdates()} disabled={checking}>
+              <RefreshCw size={13} /> {checking ? 'Checking…' : 'Check for updates'}
             </button>
           </div>
         </div>
+        {updateMsg && (
+          <p className="muted" role="status" style={{ fontSize: 'var(--fs-sm)', marginTop: 10 }}>{updateMsg}</p>
+        )}
+        <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 8 }}>
+          Open Tether from its desktop icon or the Start menu. The shared folder holds project
+          data and installers, not the app itself.
+        </p>
       </Section>
     </div>
   );

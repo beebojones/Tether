@@ -104,6 +104,39 @@ function installGuide(version) {
     `It should match \`SHA256.txt\`.\n`;
 }
 
+// Teammates keep opening the shared folder when they want to *run* Tether — the
+// installers live there, so they run one and it reinstalls instead of launching.
+// Put the answer where they are already looking, refreshed on every release.
+function writeLaunchNote(folder, version) {
+  const file = path.join(folder, 'HOW TO OPEN TETHER.txt');
+  fs.writeFileSync(file, [
+    'HOW TO OPEN TETHER',
+    '==================',
+    '',
+    'Open Tether from the Tether icon on your desktop, or press the Windows key',
+    'and start typing "Tether". That is the installed app.',
+    '',
+    'Do not open Tether from this folder. Nothing in here is the app.',
+    '',
+    'What this folder is',
+    '-------------------',
+    '  ops        The shared project history. Tether reads and writes it while',
+    '             the app is running. Do not edit, move, or delete anything here.',
+    '  releases   Installers only. Needed for the first install on a new computer,',
+    '             and read automatically when Tether checks for updates.',
+    '  backups    Automatic database backups.',
+    '',
+    'Updating',
+    '--------',
+    'Tether checks the releases folder each time it launches and offers the new',
+    'version itself. Running an installer by hand is only for a first install.',
+    '',
+    'Latest version staged here: ' + version,
+    ''
+  ].join('\r\n'));
+  return file;
+}
+
 // ---- preconditions ----
 const branch = capture('git rev-parse --abbrev-ref HEAD');
 
@@ -145,6 +178,7 @@ fs.writeFileSync(path.join(destDir, 'SHA256.txt'), `${hash} *Tether Setup ${vers
 fs.writeFileSync(path.join(destDir, 'RELEASE_NOTES.md'), releaseNotes(version));
 fs.writeFileSync(path.join(destDir, 'INSTALL.md'), installGuide(version));
 console.log(`Staged: ${destDir}`);
+console.log(`Launch note: ${writeLaunchNote(syncFolder, version)}`);
 console.log(`SHA256: ${hash}`);
 
 // ---- push ----
