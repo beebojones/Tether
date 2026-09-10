@@ -99,6 +99,10 @@ function installGuide(version) {
     `Windows shows "Windows protected your PC" (the app is not code-signed) — click ` +
     `**More info** → **Run anyway**. Per-user install, no admin needed. Your data and ` +
     `settings are preserved.\n\n` +
+    `## Opening it afterwards\n\nThe installer puts a **Tether** icon on your desktop and in ` +
+    `the Start menu. To pin it to the top of Start: press the Windows key, type **Tether**, ` +
+    `right-click the result, then choose **Pin to Start**. Windows only accepts that from your ` +
+    `own click, so no installer can do it for you.\n\n` +
     `Optional integrity check (PowerShell in this folder):\n\n` +
     "```powershell\nGet-FileHash \"Tether Setup " + version + ".exe\" -Algorithm SHA256\n```\n\n" +
     `It should match \`SHA256.txt\`.\n`;
@@ -117,6 +121,12 @@ function writeLaunchNote(folder, version) {
     'and start typing "Tether". That is the installed app.',
     '',
     'Do not open Tether from this folder. Nothing in here is the app.',
+    '',
+    'Pinning it to Start',
+    '-------------------',
+    'Press the Windows key, type "Tether", right-click the result, then choose',
+    '"Pin to Start". Windows only accepts that from your own click, so the',
+    'installer is not allowed to do it for you. Same for "Pin to taskbar".',
     '',
     'What this folder is',
     '-------------------',

@@ -6,6 +6,7 @@ import { STATUS_LABEL, TYPE_LABEL } from '@shared/types';
 import { api } from '../api';
 import { useApp } from '../store';
 import { useItems } from '../components/ui';
+import Toast from '../components/Toast';
 import { generateSnapshotHtml } from '../reports/snapshot';
 import { generateDeckHtml } from '../reports/deck';
 
@@ -90,9 +91,9 @@ export default function ReportsView() {
       </div>
 
       {snapshotSaved && (
-        <div className="toast" style={{ position: 'static', marginBottom: 10 }}>
-          Snapshot saved: <span className="mono">{snapshotSaved}</span> — open it in a browser, share it, or print to PDF.
-        </div>
+        <Toast>
+          <>Snapshot saved: <span className="mono">{snapshotSaved}</span> — open it in a browser, share it, or print to PDF.</>
+        </Toast>
       )}
 
       <p className="muted" style={{ fontSize: 'var(--fs-sm)', marginBottom: 12 }}>

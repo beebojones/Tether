@@ -5,6 +5,7 @@ import { api, type AppInfo, type BackupInfo } from '../api';
 import { useApp } from '../store';
 import { fmtDateTime, Avatar } from '../components/ui';
 import TetherMark from '../components/TetherMark';
+import Toast from '../components/Toast';
 import type { User } from '../../shared/types';
 
 // Read once at load: a long-running window shouldn't show a stale year at New Year.
@@ -178,7 +179,7 @@ export default function SettingsView() {
   return (
     <div className="view-pad" style={{ maxWidth: 760 }}>
       <div className="view-header"><h1>Settings</h1></div>
-      {msg && <div className="toast" style={{ position: 'static', marginBottom: 14 }}>{msg}</div>}
+      <Toast>{msg}</Toast>
 
       <Section title="Identity">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
@@ -494,8 +495,10 @@ export default function SettingsView() {
           <p className="muted" role="status" style={{ fontSize: 'var(--fs-sm)', marginTop: 10 }}>{updateMsg}</p>
         )}
         <p className="muted" style={{ fontSize: 'var(--fs-xs)', marginTop: 8 }}>
-          Open Tether from its desktop icon or the Start menu. The shared folder holds project
-          data and installers, not the app itself.
+          Open Tether from its desktop icon or the Start menu — the shared folder holds project data
+          and installers, not the app itself. To pin it: press the Windows key, type <strong>Tether</strong>,
+          right-click the result, then <strong>Pin to Start</strong>. Windows only accepts that from your
+          own click, so no installer can do it for you.
         </p>
       </Section>
     </div>
